@@ -26,3 +26,41 @@ class InitValidationDataTask(FiretaskBase):
 
 		with open(self["output_data"], "wb") as fh:
 			pickle.dump(validation_data, fh, protocol=pickle.HIGHEST_PROTOCOL)
+	
+	def describe(self):
+		return dict({
+			"name": "InitValidationDataTask",
+			"task": "Processes validation data and save to a single object {}".format(self["output_data"]),
+			"comment": """
+				This is just for processing the raw validation data into a format
+				usable by the simulation. You probably won't need to modify this function,
+				but you may want to if you are changing how validation data is processed.
+				It might also be useful to see the inner workings of the simulation.
+			""",
+			"inputs": [
+				{
+					"input": self["validation_data_input"],
+					"description": "Path to raw validation data file",
+					"format": "pickle"
+				},
+				{
+					"input": self["knowledge_base_raw"],
+					"description": "Path to raw knowledge base data file",
+					"format": "pickle"
+				}
+			],
+			"outputs": [
+				{
+					"output": self["output_data"],
+					"description": "Path to output validation data file",
+					"format": "pickle"
+				}
+			],
+			"methods": [
+				'ValidationDataEcoli from validation.ecoli.validation_data'
+			],
+			"categories": [
+				"initialization",
+				"validation",
+			]
+		})

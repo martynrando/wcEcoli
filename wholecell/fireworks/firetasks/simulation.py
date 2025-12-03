@@ -85,6 +85,43 @@ class SimulationTask(FiretaskBase):
 		options["trna_attenuation"] = self._get_default("trna_attenuation")
 		options["raise_on_time_limit"] = self._get_default("raise_on_time_limit")
 
+		# returns an object of all the methods for the simulation, with the options loaded in
 		sim = EcoliSimulation(**options)
 
 		sim.run()
+		return "Ran simulation with processes:" + sim._processClasses.values()
+	
+	def describe(self):
+		return dict({
+			"name": "SimulationTask",
+			"task": "Run an E. coli simulation and save results to {}".format(self["output_directory"]),
+			"comment": """
+				This task runs an E. coli simulation using the provided sim_data
+				and saves the results to the specified output directory. Runs from 
+				the method EcoliSimulation.run() in models/ecoli/sim/simulation.py. 
+				You may want to modify this function to add or update listeners and processes.
+				More details on the simulation options can be found in models/ecoli/sim/simulation.py
+				and wholecell/sim/simulation.py.
+			""",
+			"inputs": [
+				{
+					"input": self["input_sim_data"],
+					"description": "Path to input sim_data file",
+					"format": "pickle"
+				}
+			],
+			"outputs": [
+				{
+					"output": self["output_directory"],
+					"description": "Directory where simulation results are saved",
+					"format": "directory"
+				}
+			],
+			"methods": [
+				'EcoliSimulation from models.ecoli.sim.simulation'
+			],
+			"categories": [
+				"simulation",
+				"execution",
+			]
+		})

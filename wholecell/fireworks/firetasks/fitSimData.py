@@ -81,3 +81,65 @@ class FitSimDataTask(FiretaskBase):
 		metrics_data = get_metrics_data_dict(sim_data)
 		with open(self["output_metrics_data"], "wb") as f:
 			pickle.dump(metrics_data, f, protocol=pickle.HIGHEST_PROTOCOL)
+
+	def describe(self):
+		return dict({
+			"name": "FitSimDataTask",
+			"task": "Fit simulation data parameters and save to {}".format(self["output_data"]),
+			"comment": """
+				This task uses the raw data in the knowledge base to fit simulation data parameters
+				used in whole-cell simulations. You probably won't need to modify this task unless
+				you are changing how simulation data is fit.
+			""",
+			"inputs": [
+				{
+					"input": "cached",
+					"value": self["cached"],
+					"description": "Whether to use cached sim data if available"
+				},
+				{
+					"input": "debug",
+					"value": self["debug"],
+					"description": "Whether to run in debug mode"
+				},
+				{
+					"input": "input_data",
+					"value": self["input_data"],
+					"description": "Path to input raw data file"
+				},
+				{
+					"input": "cpus",
+					"value": self["cpus"],
+					"description": "Number of CPUs to use for fitting"
+				},
+				{
+					"input": "disable_ribosome_capacity_fitting",
+					"value": self["disable_ribosome_capacity_fitting"],
+					"description": "Whether to disable ribosome capacity fitting"
+				},
+				{
+					"input": "disable_rnapoly_capacity_fitting",
+					"value": self["disable_rnapoly_capacity_fitting"],
+					"description": "Whether to disable RNA polymerase capacity fitting"
+				},
+			],
+			"outputs": [
+				{
+					"output": self["output_data"],
+					"description": "Path to output sim data file",
+					"format": "pickle"
+				},
+				{
+					"output": self["output_metrics_data"],
+					"description": "Path to output metrics data file",
+					"format": "pickle"
+				},
+			],
+			"methods": [
+				"fitSimData_1 from reconstruction.ecoli.fit_sim_data_1"
+			],
+			"categories": [
+				"data processing",
+				"simulation setup"
+			]
+		})

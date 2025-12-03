@@ -59,25 +59,28 @@ class EcoliSimulation(Simulation):
 
 	_processClasses = (
 		(
-			TfUnbinding,
+			TfUnbinding, # Unbind transcription factors from DNA to allow signaling processes before binding back to DNA.
 		),
 		# Must run after TfUnbinding and before TfBinding
 		(
-			Equilibrium,
+			Equilibrium, 
 			TwoComponentSystem,
-			RnaMaturation,
+			RnaMaturation,	# - Converts unprocessed tRNA/rRNA molecules into mature tRNA/rRNAs
+							# - Consolidates the different variants of 23S, 16S, and 5S rRNAs into the single
+							# variant that is used for ribosomal subunits
 		),
 		# Must run before TranscriptInitiation
 		(
-			TfBinding,
+			TfBinding,	# Bind transcription factors to DNA for transcription regulation
 		),
 		(
 			TranscriptInitiation,
 			PolypeptideInitiation,
-			ChromosomeReplication,
-			ProteinDegradation,
-			RnaDegradation,
-			Complexation,
+			ChromosomeReplication,	# Performs initiation, elongation, and termination of active partial chromosomes
+									# that replicate the chromosome.
+			ProteinDegradation,	# Protein degradation sub-model. Encodes molecular simulation of protein degradation as a Poisson process
+			RnaDegradation,	# Submodel for RNA degradation. For more details, see models/ecoli/processes/rna_degradation.py
+			Complexation, # Macromolecular complexation sub-model. Encodes molecular simulation of macromolecular complexation
 		),
 		(
 			TranscriptElongation,
@@ -85,13 +88,16 @@ class EcoliSimulation(Simulation):
 		),
 		# Must run after TranscriptElongation and PolypeptideElongation
 		(
-			ChromosomeStructure,
+			ChromosomeStructure,	# ChromosomeStructure process
+									# - Resolve collisions between molecules and replication forks on the chromosome.
+									# - Remove and replicate promoters and motifs that are traversed by replisomes.
+									# - Reset the boundaries and linking numbers of chromosomal segments.
 		),
 		(
-			Metabolism,
+			Metabolism,	# Metabolism sub-model. Encodes molecular simulation of microbial metabolism using flux-balance analysis.
 		),
 		(
-			CellDivision,
+			CellDivision,	# - Flags the cell for division when a preset division criterion has been met
 		),
 	)
 
@@ -144,4 +150,8 @@ def ecoli_simulation(**options):
 	there's a non-None `inheritedStatePath` option.
 	"""
 	is_daughter = options.get('inheritedStatePath', None) is not None
+
+	# runs each process initialization then each listener
+	# then updates states
+
 	return EcoliDaughterSimulation(**options) if is_daughter else EcoliSimulation(**options)

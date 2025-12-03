@@ -38,3 +38,55 @@ class VariantSimDataTask(FiretaskBase):
 
 		with open(os.path.join(self["variant_metadata_directory"], "description"), "w") as h:
 			h.write("%s\n" % info["desc"])
+
+	def describe(self):
+		return dict({
+			"name": "VariantSimDataTask",
+			"task": "Apply a variant function to a base sim_data file and save the resulting variant",
+			"comment": """
+				Applies variant functions in 
+			"""
+			+ 
+				"wholecell.models.ecoli.sim.variants.apply_variant"
+			+
+			"""
+			 	to base sim_data file to create a variant sim_data file.
+				Saves the variant sim_data file and metadata about the variant.
+			""",
+			"inputs": [
+				{
+					"input": self["input_sim_data"],
+					"description": "Path to input sim_data file",
+					"format": "pickle"
+				},
+				{
+					"input": "variant_function",
+					"value": self["variant_function"],
+					"description": "The variant function to apply to the base sim_data"
+				},
+				{
+					"input": "variant_index",
+					"value": self["variant_index"],
+					"description": "The index of the variant to apply"
+				}
+			],
+			"outputs": [
+				{
+					"output": self["output_sim_data"],
+					"description": "Path to output variant sim_data file",
+					"format": "pickle"
+				},
+				{
+					"output": self["variant_metadata_directory"],
+					"description": "Directory to output variant metadata files",
+					"format": "text files"
+				}
+			],
+			"methods": [
+				'apply_variant from wholecell.models.ecoli.sim.variants.apply_variant'
+			],
+			"categories": [
+				"initialization",
+				"variants",
+			]
+		})
