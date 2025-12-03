@@ -78,7 +78,7 @@ RUN (b1="" \
     && echo "Installing pips with '$b1'" \
     && pip install --no-cache-dir --upgrade pip setuptools wheel \
     && pip install --no-cache-dir numpy==1.26.3 $b1 \
-    && pip install --no-cache-dir -r requirements.txt $b1 \
+    && pip install --no-cache-dir --no-build-isolation -r requirements.txt $b1 \
     && umask 000 && mkdir -p /.aesara)
 
 CMD ["/bin/bash"]
