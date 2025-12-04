@@ -1,4 +1,5 @@
-from flask import Flask, render_template, Markup, send_from_directory
+from flask import Flask, render_template, send_from_directory
+from markupsafe import Markup
 import markdown
 import os
 
