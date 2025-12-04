@@ -34,6 +34,9 @@ LABEL application="Project Documentation Server" \
 COPY . /wcEcoli
 WORKDIR /wcEcoli
 
+RUN make clean compile
+ENV PYTHONPATH=/wcEcoli
+
 # Install Flask
 RUN pip install --no-cache-dir flask
 
@@ -47,4 +50,5 @@ RUN mkdir -p /docs/logs
 RUN (echo 'echo "Welcome to the Project Documentation Server!"' >> ~/.bashrc)
 
 # Command to run the Flask app
-CMD ["python", "docs/webdocs/app.py"]
+# CMD ["python", "docs/webdocs/app.py"]
+RUN ls -R /wcEcoli
