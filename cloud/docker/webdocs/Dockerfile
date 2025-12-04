@@ -51,4 +51,3 @@ RUN (echo 'echo "Welcome to the Project Documentation Server!"' >> ~/.bashrc)
 
 # Command to run the Flask app
 # CMD ["python", "docs/webdocs/app.py"]
-RUN ls -R /wcEcoli
