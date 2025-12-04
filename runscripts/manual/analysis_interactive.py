@@ -502,7 +502,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 
 		# Serve interactive page (may take a second to load, reload if necessary)
 		webbrowser.open_new(f'http://127.0.0.1:{PORT}/')
-		app.run_server(port=PORT)
+		app.run_server(host="0.0.0.0", port=PORT)
 
 
 if __name__ == '__main__':
