@@ -38,7 +38,7 @@ WORKDIR /wcEcoli
 ENV PYTHONPATH=/wcEcoli
 
 # Install Flask
-RUN pip install --no-cache-dir flask
+RUN pip install --no-cache-dir flask markdown markupsafe
 
 # Expose port for the Flask app
 EXPOSE 5000
