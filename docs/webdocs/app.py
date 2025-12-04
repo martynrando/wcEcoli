@@ -19,11 +19,11 @@ def render_markdown(filename):
         return Markup(markdown.markdown(text))
     return Markup("<p>Content not found.</p>")
 
-# Home page
 @app.route("/static/<path:filename>")
 def static_files(filename):
     return send_from_directory(STATIC_FOLDER, filename)
 
+@app.route("/")
 def home():
     # Load markdown content
     background_html = render_markdown("background.md")
