@@ -39,7 +39,7 @@ def home():
 @app.route("/listeners")
 def listeners():
     return render_template(
-        "base.html",
+        "templates/base.html",
         page_title="Listeners - WCM E. coli",
         heading="Listeners",
         content=Markup("<p>Listeners page content coming soon.</p>"),
@@ -49,7 +49,7 @@ def listeners():
 @app.route("/processes")
 def processes():
     return render_template(
-        "base.html",
+        "templates/base.html",
         page_title="Processes - WCM E. coli",
         heading="Processes",
         content=Markup("<p>Processes page content coming soon.</p>"),
