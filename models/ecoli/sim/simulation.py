@@ -99,7 +99,7 @@ class EcoliSimulation(Simulation):
 		(
 			CellDivision,	# - Flags the cell for division when a preset division criterion has been met
 		),
-	)
+	) # suspicion: tuples run serially, processes inside run 'concurrently' within the logic of the model?
 
 	_listenerClasses = (
 		Mass,
