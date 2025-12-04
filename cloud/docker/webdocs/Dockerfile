@@ -34,8 +34,8 @@ LABEL application="Project Documentation Server" \
 COPY . /wcEcoli
 WORKDIR /wcEcoli
 
-RUN make clean compile
-ENV PYTHONPATH=/wcEcoli
+#RUN make clean compile
+#ENV PYTHONPATH=/wcEcoli
 
 # Install Flask
 RUN pip install --no-cache-dir flask
