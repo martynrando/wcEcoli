@@ -957,7 +957,21 @@ class WorkflowBuilder:
 		"""
 		workflow = Workflow(self.wf_fws, links_dict=self.wf_links)
 		return workflow
-
+	
+	def describe(self) -> None:
+		"""Print a summary of the workflow."""
+		log_info("\n--- Workflow Summary ---")
+		log_info(f"Total Fireworks: {len(self.wf_fws)}")
+		total_links = sum(len(v) for v in self.wf_links.values())
+		log_info(f"Total Dependency Links: {total_links}")
+		log_info("------------------------\n")
+		log_info("\n--- Task List ---")
+		for fw in self.wf_fws:
+			log_info(f"\nFirework: {fw.name}, Parents: {[p.name for p in fw.parents]}, Children: {[c.name for c in self.wf_links.get(fw, [])]}")
+			log_info(f"\nDescribe: \n")
+			desc = "\n".join(f"  {key}: {value}" for key, value in fw.describe().items())
+			log_info(desc)
+			log_info("\n------------------------")
 
 def upload_workflow(workflow: Workflow):
 	"""Upload a Fireworks Workflow to the LaunchPad."""
