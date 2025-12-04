@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>{{ page_title }}</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin:0; padding:0; display:flex; }
+        #sidebar { width: 220px; background: #f4f4f4; padding: 20px; height: 100vh; }
+        #main { flex:1; padding: 20px; }
+        header { text-align: center; margin-bottom: 20px; }
+        footer { text-align: center; margin-top: 40px; font-size: 0.8em; color: #666; }
+        img { max-width: 100%; height: auto; display:block; margin: 20px auto; }
+        a { text-decoration: none; display: block; margin: 10px 0; color: #333; }
+        a:hover { text-decoration: underline; }
+    </style>
+</head>
+<body>
+    <div id="sidebar">
+        <h3>Navigation</h3>
+        <a href="/">Home</a>
+        <a href="/listeners">Listeners</a>
+        <a href="/processes">Processes</a>
+    </div>
+    <div id="main">
+        <header><h1>{{ heading }}</h1></header>
+
+        {% if image_file %}
+            <img src="{{ url_for('static_files', filename=image_file) }}" alt="Flowchart">
+        {% endif %}
+
+        <div>{{ content }}</div>
+
+        <footer>
+            <p>Based on the work of CovertLab at Stanford; This repository contains code for the following publications:</p>
+            <ul>
+                <li>Simultaneous cross-evaluation of heterogeneous E. coli datasets via mechanistic simulation published in Science, 24 July 2020. (Release)</li>
+                <li>The E. coli whole-cell modeling project published in EcoSal Plus, 9 July 2021.</li>
+                <li>An expanded whole-cell model of E. coli links cellular physiology with mechanisms of growth rate control published in npj Systems Biology and Applications, 19 August 2022. (Release)</li>
+                <li>Whole-cell modeling of E. coli confirms that in vitro tRNA aminoacylation measurements are insufficient to support cell growth and predicts a positive feedback mechanism regulating arginine biosynthesis.</li>
+            </ul>
+        </footer>
+    </div>
+</body>
+</html>
