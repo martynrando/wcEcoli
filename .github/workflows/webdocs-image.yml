@@ -3,21 +3,21 @@ name: Build webdocs image
 on:
   push:
     branches: [ "20251204_webdocs" ]
-  pull_request:
-    branches: [ "20241204_webdocs" ]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAMESPACE: martynrando/wcecoli
 
 jobs:
-  build-webdocs:
+  build:
     name: Build webdocs docker image
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+        with:
+          ref: ${{ github.ref }}
 
       - name: Log in to GHCR
         uses: docker/login-action@v3
@@ -29,9 +29,8 @@ jobs:
       - name: Build webdocs image
         uses: docker/build-push-action@v5
         with:
-          context: .
-          file: cloud/docker/runtime/Dockerfile
+          context: ${{ github.workspace }}
+          file: ${{ github.workspace }}/cloud/docker/webdocs/Dockerfile
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/wcm-webdocs:latest
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/wcm-webdocs:${{ github.sha }}

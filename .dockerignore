@@ -1,7 +1,6 @@
 .git*
 .gcloudignore
 /.idea
-/docs
 /user
 /stubs
 /.mypy_cache
