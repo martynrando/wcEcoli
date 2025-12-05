@@ -117,7 +117,7 @@ def serve_process_pdf(pdf_file):
     
     title = pdf_file[:-4].replace('_', ' ').title()
     comments = list(
-        comments_collection.find({"page_id": f"process:{pdf_file}"}).sort("timestamp", -1)
+        comments_collection.find({"page_id": f"process::{pdf_file}"}).sort("timestamp", -1)
     )
     
     # Use the new route to get the PDF URL
