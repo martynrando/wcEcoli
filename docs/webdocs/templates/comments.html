@@ -9,8 +9,8 @@
 <ul class="comment-list">
 {% for c in comments %}
   <li>
-    <strong>{{ c.username }}</strong> <em>{{ c.timestamp }}</em><br>
-    {{ c.comment }}
+    <strong>{{ c["username"] }}</strong> <em>{{ c["timestamp"] }}</em><br>
+    {{ c["comment"] }}
   </li>
 {% endfor %}
 </ul>

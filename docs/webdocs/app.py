@@ -1,8 +1,9 @@
-from flask import Flask, render_template, send_from_directory, abort, url_for, request
+from flask import Flask, render_template, send_from_directory, abort, url_for, request, redirect
 from pymongo import MongoClient
 from markupsafe import Markup
 import markdown
 import os
+import time
 
 app = Flask(
     __name__,
@@ -32,6 +33,9 @@ def render_markdown(filename):
 def home():
     # Load markdown content
     background_html = render_markdown("background.md")
+    comments = list(
+        comments_collection.find({"page_id": "home"}).sort("timestamp", -1)
+    )
     
     return render_template(
         "wiki_page.html",
@@ -41,12 +45,17 @@ def home():
         image_file=url_for("static",filename="wcEcoli_flowchart.png"),
         see_also=["processes", "listeners"],
         references=[],
-        further_reading=[]
+        further_reading=[],
+        page_id="home",
+        comments=comments
     )
 
 # Placeholder pages
 @app.route("/listeners")
 def listeners():
+    comments = list(
+        comments_collection.find({"page_id": "listeners"}).sort("timestamp", -1)
+    )
     return render_template(
         "wiki_page.html",
         page_title="Listeners",
@@ -55,7 +64,9 @@ def listeners():
         image_file=None,
         see_also=["processes", "listeners"],
         references=[],
-        further_reading=[]
+        further_reading=[],
+        page_id="listeners",
+        comments=comments
     )
 
 # Processes index page
@@ -63,12 +74,15 @@ def listeners():
 def processes():
     pdf_dir = os.path.join(BASE_DIR, "processes")
     pdfs = []
+    comments = list(
+        comments_collection.find({"page_id": "processes"}).sort("timestamp", -1)
+    )
 
     for filename in sorted(os.listdir(pdf_dir)):
         if filename.lower().endswith(".pdf"):
             pdfs.append({
                 "title": filename[:-4].replace('_', ' ').title(),
-                "file": filename,
+                "file": os.path.join(pdf_dir,filename),
                 "url": url_for("serve_process_pdf", pdf_file=filename)
             })
 
@@ -81,7 +95,9 @@ def processes():
         image_file=None,
         see_also=["processes", "listeners"],
         references=[],
-        further_reading=[]
+        further_reading=[],
+        page_id="processes",
+        comments=comments
     )
 
 # Route to serve PDFs from the processes folder
@@ -100,6 +116,9 @@ def serve_process_pdf(pdf_file):
         abort(404)
     
     title = pdf_file[:-4].replace('_', ' ').title()
+    comments = list(
+        comments_collection.find({"page_id": f"process:{pdf_file}"}).sort("timestamp", -1)
+    )
     
     # Use the new route to get the PDF URL
     pdf_url = url_for("get_process_pdf", pdf_file=pdf_file)
@@ -112,7 +131,9 @@ def serve_process_pdf(pdf_file):
         image_file=None,
         see_also=["processes", "listeners"],
         references=[],
-        further_reading=[]
+        further_reading=[],
+        page_id=f"process::{pdf_file}",
+        comments=comments
     )
 
 # Comments submission route
@@ -125,10 +146,11 @@ def submit_comment(page_id):
     comments_collection.insert_one({
         "page_id": page_id,
         "username": data.get("username"),
-        "comment": data.get("comment")
+        "comment": data.get("comment"),
+        "timestamp": time.ctime()
     })
 
-    return "Comment added to DB."
+    return redirect(request.referrer or url_for("home"))
 
 
 
