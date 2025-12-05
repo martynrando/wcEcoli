@@ -21,7 +21,7 @@
 <h2>See also</h2>
 <ul>
 {% for p in see_also %}
-  <li><a href="{{ url_for(p + '_page') }}">{{ p.title() }}</a></li>
+  <li><a href="{{ url_for(p) }}">{{ p.title() }}</a></li>
 {% endfor %}
 </ul>
 

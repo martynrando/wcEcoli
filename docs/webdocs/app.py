@@ -41,8 +41,8 @@ def home():
 @app.route("/listeners")
 def listeners():
     return render_template(
-        "base.html",
-        page_title="Listeners - WCM E. coli",
+        "wiki_page.html",
+        page_title="Listeners",
         heading="Listeners",
         content=Markup("<p>Listeners page content coming soon.</p>"),
         image_file=None,
@@ -59,7 +59,7 @@ def processes():
             pdfs.append({
                 "title": filename[:-4].replace('_', ' ').title(),
                 "file": filename,
-                "url": url_for("processes", pdf_file=filename)
+                "url": url_for("serve_process_pdf", pdf_file=filename)
             })
 
     return render_template(
