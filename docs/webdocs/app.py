@@ -147,7 +147,7 @@ def submit_comment(page_id):
         "page_id": page_id,
         "username": data.get("username"),
         "comment": data.get("comment"),
-        "timestamp": time.ctime()
+        "timestamp": time.strftime("%Y-%m-%d %H:%M:%S", time.localtime())
     })
 
     return redirect(request.referrer or url_for("home"))

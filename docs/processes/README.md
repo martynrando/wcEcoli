@@ -4,15 +4,15 @@ The Processes of the *E. coli* model span several major areas of cellular physio
 
 ### Process Index
 
-* [Cell Division](cell_division.pdf)
-* [Chromosome Replication](chromosome_replication.pdf)
-* [Complexation](complexation.pdf)
-* [Metabolism](metabolism.pdf)
-* [Protein Degradation](protein_degradation.pdf)
-* [RNA Degradation](rna_degradation.pdf)
-* [Transcription](transcription.pdf)
-* [Transcripton Regulation](transcription_regulation.pdf)
-* [Translation](translation.pdf)
+* [Cell Division](processes/cell_division.pdf)
+* [Chromosome Replication](processes/chromosome_replication.pdf)
+* [Complexation](processes/complexation.pdf)
+* [Metabolism](processes/metabolism.pdf)
+* [Protein Degradation](processes/protein_degradation.pdf)
+* [RNA Degradation](processes/rna_degradation.pdf)
+* [Transcription](processes/transcription.pdf)
+* [Transcripton Regulation](processes/transcription_regulation.pdf)
+* [Translation](processes/translation.pdf)
 
 ### Regeneration of pdf files from tex files
 
