@@ -1,4 +1,4 @@
-from flask import Flask, render_template, send_from_directory, abort, url_for
+from flask import Flask, render_template, send_from_directory, abort, url_for, request
 from pymongo import MongoClient
 from markupsafe import Markup
 import markdown
@@ -9,6 +9,9 @@ app = Flask(
     template_folder="templates",
     static_folder="static"
 )
+mongoclient = MongoClient("mongodb://172.17.0.1:27017/")
+webdocs_db = mongoclient["wcecoli_webdocs"]
+comments_collection = webdocs_db["comments"]
 
 # Path to files
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # docs/
@@ -58,7 +61,7 @@ def listeners():
 # Processes index page
 @app.route("/processes")
 def processes():
-    pdf_dir = os.path.join('..', "processes")
+    pdf_dir = os.path.join(BASE_DIR, "processes")
     pdfs = []
 
     for filename in sorted(os.listdir(pdf_dir)):
@@ -73,7 +76,7 @@ def processes():
         "wiki_page.html",
         page_title="Processes",
         heading="Processes",
-        content=Markup("<p>Select a process to view its documentation.</p>"),
+        content=render_markdown(os.path.join(BASE_DIR, "processes","README.md")),
         processes=pdfs,
         image_file=None,
         see_also=["processes", "listeners"],
@@ -118,8 +121,14 @@ def submit_comment(page_id):
     """
     Submit comment and save to MongoDB.
     """
-    # Currently disabled
-    return "Comments are currently disabled."
+    data = request.form
+    comments_collection.insert_one({
+        "page_id": page_id,
+        "username": data.get("username"),
+        "comment": data.get("comment")
+    })
+
+    return "Comment added to DB."
 
 
 
