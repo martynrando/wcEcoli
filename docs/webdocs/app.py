@@ -1,13 +1,17 @@
-from flask import Flask, render_template, send_from_directory
+from flask import Flask, render_template, send_from_directory, abort, url_for
 from markupsafe import Markup
 import markdown
 import os
 
-app = Flask(__name__)
+app = Flask(
+    __name__,
+    template_folder="templates",
+    static_folder="static"
+)
 
 # Path to files
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # docs/
-STATIC_FOLDER = BASE_DIR
+#STATIC_FOLDER = BASE_DIR
 MARKDOWN_FOLDER = BASE_DIR
 
 # Helper function to load markdown file and convert to HTML
@@ -19,21 +23,18 @@ def render_markdown(filename):
         return Markup(markdown.markdown(text))
     return Markup("<p>Content not found.</p>")
 
-@app.route("/static/<path:filename>")
-def static_files(filename):
-    return send_from_directory(STATIC_FOLDER, filename)
-
+# Home page
 @app.route("/")
 def home():
     # Load markdown content
     background_html = render_markdown("background.md")
     
     return render_template(
-        "base.html",
-        page_title="Whole Cell Model - E. coli",
-        heading="Whole Cell Model - E. coli",
+        "wiki_page.html",
+        title="Home",
+        heading="Whole Cell Model of E. coli",
         content=background_html,
-        image_file="wcEcoli_flowchart.png",
+        image_file=url_for("static",filename="wcEcoli_flowchart.png")
     )
 
 # Placeholder pages
@@ -47,13 +48,43 @@ def listeners():
         image_file=None,
     )
 
+# Processes index page
 @app.route("/processes")
 def processes():
+    pdf_dir = os.path.join('..', "processes")
+    pdfs = []
+
+    for filename in sorted(os.listdir(pdf_dir)):
+        if filename.lower().endswith(".pdf"):
+            pdfs.append({
+                "title": filename[:-4].replace('_', ' ').title(),
+                "file": filename,
+                "url": url_for("processes", pdf_file=filename)
+            })
+
     return render_template(
-        "base.html",
-        page_title="Processes - WCM E. coli",
+        "wiki_page.html",
+        page_title="Processes",
         heading="Processes",
-        content=Markup("<p>Processes page content coming soon.</p>"),
+        content=Markup("<p>Select a process to view its documentation.</p>"),
+        processes=pdfs,
+        image_file=None,
+    )
+
+@app.route("/processes/<path:pdf_file>")
+def serve_process_pdf(pdf_file):
+    pdf_dir = os.path.join('..', "processes")
+    path = os.path.join(pdf_dir, pdf_file)
+
+    if not os.path.exists(path):
+        abort(404)
+    
+    title = pdf_file[:-4].replace('_', ' ').title()
+    return render_template(
+        "wiki_page.html",
+        page_title=title,
+        heading=title,
+        content=Markup(f'<embed src="{url_for("static", filename=os.path.join("..", "processes", pdf_file))}" type="application/pdf" width="100%" height="800px" />'),
         image_file=None,
     )
 

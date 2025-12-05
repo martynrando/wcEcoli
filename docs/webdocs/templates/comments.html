@@ -1,0 +1,16 @@
+<h2>Comments</h2>
+
+<form method="POST" action="{{ url_for('submit_comment', page_id=page_id) }}">
+  <input name="username" placeholder="Your name" required>
+  <textarea name="comment" placeholder="Your comment" required></textarea>
+  <button type="submit">Submit</button>
+</form>
+
+<ul class="comment-list">
+{% for c in comments %}
+  <li>
+    <strong>{{ c.username }}</strong> <em>{{ c.timestamp }}</em><br>
+    {{ c.comment }}
+  </li>
+{% endfor %}
+</ul>

@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>{{ title }}</h1>
+
+{% if image_file %}
+<img src="{{ url_for('static', filename=image_file) }}" class="hero-image">
+{% endif %}
+
+<div class="article">
+  {{ content|safe }}
+</div>
+
+<h2>References</h2>
+<ul>
+{% for r in references %}
+  <li>{{ r }}</li>
+{% endfor %}
+</ul>
+
+<h2>See also</h2>
+<ul>
+{% for p in see_also %}
+  <li><a href="{{ url_for(p + '_page') }}">{{ p.title() }}</a></li>
+{% endfor %}
+</ul>
+
+<h2>Further reading</h2>
+<ul>
+{% for label, link in further_reading %}
+  <li><a href="{{ link }}" target="_blank">{{ label }}</a></li>
+{% endfor %}
+</ul>
+
+{% include "comments.html" %}
+{% endblock %}

@@ -1,44 +1,83 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>{{ page_title }}</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin:0; padding:0; display:flex; }
-        #sidebar { width: 220px; background: #f4f4f4; padding: 20px; height: 100vh; }
-        #main { flex:1; padding: 20px; }
-        header { text-align: center; margin-bottom: 20px; }
-        footer { text-align: center; margin-top: 40px; font-size: 0.8em; color: #666; }
-        img { max-width: 100%; height: auto; display:block; margin: 20px auto; }
-        a { text-decoration: none; display: block; margin: 10px 0; color: #333; }
-        a:hover { text-decoration: underline; }
-    </style>
+    <title>{{ title }} – Whole Cell Model (E. coli)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <!-- Main Wiki CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
 </head>
+
 <body>
-    <div id="sidebar">
-        <h3>Navigation</h3>
-        <a href="/">Home</a>
-        <a href="/listeners">Listeners</a>
-        <a href="/processes">Processes</a>
+
+    <!-- =======================
+         HEADER
+    ======================== -->
+    <header id="wiki-header">
+        <div class="header-inner">
+            <div class="header-title">
+                <a href="{{ url_for('index') }}">Whole-Cell Model – <em>E. coli</em></a>
+            </div>
+            <div class="header-subtitle">
+                Open, interactive documentation for the *E. coli* whole-cell model.
+            </div>
+        </div>
+    </header>
+
+    <!-- =======================
+         MAIN LAYOUT
+    ======================== -->
+    <div id="wiki-container">
+
+        <!-- ======= SIDEBAR ======= -->
+        <aside id="sidebar">
+            <nav class="sidebar-nav">
+                <h3>Contents</h3>
+                <ul>
+                    <li><a href="{{ url_for('index') }}">Home</a></li>
+                    <li><a href="{{ url_for('processes_page') }}">Processes</a></li>
+                    <li><a href="{{ url_for('listeners_page') }}">Listeners</a></li>
+                    <li><a href="https://github.com/martynrando/wcecoli" target="_blank">GitHub Repository</a></li>
+                </ul>
+            </nav>
+
+            <nav class="sidebar-nav">
+                <h3>Resources</h3>
+                <ul>
+                    <li><a href="https://covert.stanford.edu/" target="_blank">Covert Lab</a></li>
+                    <li><a href="https://www.nature.com/" target="_blank">npj Systems Biology</a></li>
+                    <li><a href="https://pubmed.ncbi.nlm.nih.gov/" target="_blank">PubMed</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- ======= MAIN PAGE CONTENT ======= -->
+        <main id="wiki-content">
+            {% block content %}
+            <!-- Filled by wiki_page.html -->
+            {% endblock %}
+        </main>
+
     </div>
-    <div id="main">
-        <header><h1>{{ heading }}</h1></header>
 
-        {% if image_file %}
-            <img src="{{ url_for('static_files', filename=image_file) }}" alt="Flowchart">
-        {% endif %}
+    <!-- =======================
+         FOOTER
+    ======================== -->
+    <footer id="wiki-footer">
+        <p>Based on the work of Covert Lab, Stanford University.</p>
 
-        <div>{{ content }}</div>
+        <p>This repository contains code for the following publications:</p>
 
-        <footer>
-            <p>Based on the work of CovertLab at Stanford; This repository contains code for the following publications:</p>
-            <ul>
-                <li>Simultaneous cross-evaluation of heterogeneous E. coli datasets via mechanistic simulation published in Science, 24 July 2020. (Release)</li>
-                <li>The E. coli whole-cell modeling project published in EcoSal Plus, 9 July 2021.</li>
-                <li>An expanded whole-cell model of E. coli links cellular physiology with mechanisms of growth rate control published in npj Systems Biology and Applications, 19 August 2022. (Release)</li>
-                <li>Whole-cell modeling of E. coli confirms that in vitro tRNA aminoacylation measurements are insufficient to support cell growth and predicts a positive feedback mechanism regulating arginine biosynthesis.</li>
-            </ul>
-        </footer>
-    </div>
+        <ul>
+            <li><em>Simultaneous cross-evaluation of heterogeneous E. coli datasets via mechanistic simulation</em>. Science, 24 July 2020.</li>
+            <li><em>The E. coli whole-cell modeling project</em>. EcoSal Plus, 9 July 2021.</li>
+            <li><em>An expanded whole-cell model of E. coli links cellular physiology with mechanisms of growth rate control</em>. npj Systems Biology and Applications, 19 August 2022.</li>
+            <li><em>Whole-cell modeling of E. coli confirms that in vitro tRNA aminoacylation measurements are insufficient to support cell growth and predicts a positive feedback mechanism regulating arginine biosynthesis</em>.</li>
+        </ul>
+
+        <p class="footer-small">© {{ now().year if now else "2025" }} Whole-Cell Model Documentation. All rights reserved.</p>
+    </footer>
+
 </body>
 </html>
