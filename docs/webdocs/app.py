@@ -193,6 +193,16 @@ def submit_comment(page_id):
     return redirect(request.referrer or url_for("home"))
 
 
+@app.route("/submit/", methods=["POST"])
+def submit_workflow():
+    user_params = {}
+
+    for name, rule in WF_RULES.items():
+        raw_value = request.form.get(name)
+        if raw_value is not None:
+            user_params[name] = raw_value
+    return f"Submitted parameters: {user_params}"
+
 
 if __name__ == "__main__":
     # Run Flask app
