@@ -7,15 +7,55 @@ on:
 env:
   REGISTRY: ghcr.io
   IMAGE_NAMESPACE: martynrando/wcecoli
+  RUNTIME_IMAGE: wcm-runtime
+  WEBDOCS_IMAGE: wcm-webdocs
 
 jobs:
-  build:
-    name: Build webdocs docker image
+  
+  build-runtime:
+    name: Build runtime image
     runs-on: ubuntu-latest
+
+    permissions:
+      packages: write
+      contents: read
+      
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Log in to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Build runtime image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: cloud/docker/runtime/Dockerfile
+          push: true
+          build-args: |
+            COMPILE_BLAS=0
+            NO_AVX2=0
+          tags: |
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ env.RUNTIME_IMAGE }}:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ env.RUNTIME_IMAGE }}:${{ github.sha }}
+
+  build-webdocs:
+    name: Build webdocs docker image (using runtime image)
+    runs-on: ubuntu-latest
+    needs: build-runtime
+
+    permissions:
+      packages: write
+      contents: read
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
         with:
           ref: ${{ github.ref }}
 
@@ -34,3 +74,4 @@ jobs:
           push: true
           tags: |
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/wcm-webdocs:latest
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAMESPACE }}/${{ env.WCM_IMAGE }}:${{ github.sha }}
