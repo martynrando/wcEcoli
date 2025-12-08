@@ -4,6 +4,7 @@ from markupsafe import Markup
 import markdown
 import os
 import time
+from fw_logic_and_launch import WF_RULES
 
 app = Flask(
     __name__,
@@ -135,6 +136,45 @@ def serve_process_pdf(pdf_file):
         page_id=f"process::{pdf_file}",
         comments=comments
     )
+
+
+@app.route("/control", methods=["GET"])
+def control_page():
+    """
+    Render the workflow control form dynamically from WF_RULES.
+    """
+    params = []
+
+    for name, rule in WF_RULES.items():
+        param_type = rule.get("type", None)
+        default = rule.get("default", None)
+        description = rule.get("description", "")
+        allowed_set = rule.get("allowed_set", None)
+        allowed = rule.get("allowed", None)
+
+        # classify each param so template can choose the correct input
+        if param_type == int:
+            field_type = "number"
+        elif param_type == str:
+            field_type = "text"
+        elif param_type == list:
+            field_type = "list"
+        elif param_type == bool or (param_type == int and rule.get("allowed") == [0,1]):
+            field_type = "bool"
+        else:
+            field_type = "text"
+
+        params.append({
+            "name": name,
+            "type": field_type,
+            "default": default,
+            "description": description,
+            "allowed_set": allowed_set,
+            "allowed": allowed,
+        })
+
+    return render_template("control_page.html", params=params)
+
 
 # Comments submission route
 @app.route("/submit_comment/<page_id>", methods=["POST"])

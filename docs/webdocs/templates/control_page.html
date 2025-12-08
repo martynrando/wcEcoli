@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Workflow Control</title>
+    <style>
+        body { font-family: sans-serif; margin: 40px }
+        label { font-weight: bold; display: block; margin-top: 20px }
+        input, select, textarea { width: 400px; padding: 5px; }
+        .desc { color: #666; font-size: 0.9em; margin-bottom: 8px }
+        .tooltip {
+            position: relative;
+            display: inline-block;
+            border-bottom: 1px dotted #888;
+            cursor: help;
+        }
+        .tooltip .tooltiptext {
+            visibility: hidden;
+            width: 250px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            border-radius: 5px;
+            padding: 8px;
+            position: absolute;
+            z-index: 10;
+            bottom: 125%;  
+            left: 0;
+            opacity: 0;
+            transition: opacity 0.2s;
+        }
+        .tooltip:hover .tooltiptext {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+
+<h1>Workflow Parameters</h1>
+
+<form method="POST" action="/submit/">
+
+    {% for p in params %}
+
+        <label>{{ p.name }}</label>
+        <div class="desc">{{ p.description }}</div>
+
+        {% if p.type == "text" %}
+            <input type="text" name="{{ p.name }}" value="{{ p.default }}">
+
+        {% elif p.type == "number" %}
+            <input type="number" name="{{ p.name }}" value="{{ p.default }}">
+
+        {% elif p.type == "bool" %}
+            <input type="checkbox" name="{{ p.name }}" {% if p.default == 1 %} checked {% endif %}>
+
+        {% elif p.type == "list" %}
+            <select name="{{ p.name }}" multiple size="5">
+                {% for opt in p.allowed_set %}
+                    <option value="{{ opt }}"
+                        {% if opt in p.default %} selected {% endif %}>
+                        {{ opt }}
+                    </option>
+                {% endfor %}
+            </select>
+        {% endif %}
+
+        <label class="tooltip">
+            {{ p.name }}
+            <span class="tooltiptext">{{ p.description }}</span>
+        </label>
+
+
+        <br>
+
+    {% endfor %}
+
+    <br><br>
+    <button type="submit">Start Workflow</button>
+
+</form>
+
+</body>
+</html>

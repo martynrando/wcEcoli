@@ -979,7 +979,7 @@ def upload_workflow(workflow: Workflow):
 	lpad.add_wf(workflow)
 
 
-def main():
+def build_and_submit():
 	builder = WorkflowBuilder()
 
 	if OPERONS == 'both':
@@ -999,4 +999,4 @@ def main():
 
 
 if __name__ == '__main__':
-	main()
+	build_and_submit()
