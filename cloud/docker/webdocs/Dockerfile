@@ -12,7 +12,7 @@
 #
 # Then open http://localhost:5000 in your browser to view the documentation.
 
-ARG from=wcm-runtime:latest
+ARG from=ghcr.io/martynrando/wcecoli/wcm-runtime:latest
 FROM ${from}
 
 # Record Docker Image metadata in ENV variables, viewable by `docker inspect`
