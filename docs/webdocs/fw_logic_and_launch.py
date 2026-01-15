@@ -1,3 +1,30 @@
+import collections
+import os
+import sys
+from typing import Any, Dict, List, Optional, Union
+
+from fireworks import LaunchPad, Workflow, Firework, ScriptTask, FiretaskBase
+from models.ecoli.sim.variants.new_gene_internal_shift import (NEW_GENE_EXPRESSION_FACTORS,
+	NEW_GENE_TRANSLATION_EFFICIENCY_VALUES, NEW_GENE_INDUCTION_GEN,
+	NEW_GENE_KNOCKOUT_GEN)
+from wholecell.fireworks.firetasks import InitRawDataTask
+from wholecell.fireworks.firetasks import InitRawValidationDataTask
+from wholecell.fireworks.firetasks import InitValidationDataTask
+from wholecell.fireworks.firetasks import FitSimDataTask
+from wholecell.fireworks.firetasks import VariantSimDataTask
+from wholecell.fireworks.firetasks import SimulationTask
+from wholecell.fireworks.firetasks import SimulationDaughterTask
+from wholecell.fireworks.firetasks import AnalysisParcaTask
+from wholecell.fireworks.firetasks import AnalysisVariantTask
+from wholecell.fireworks.firetasks import AnalysisCohortTask
+from wholecell.fireworks.firetasks import AnalysisSingleTask
+from wholecell.fireworks.firetasks import AnalysisMultiGenTask
+from wholecell.fireworks.firetasks import AnalysisComparisonTask
+from wholecell.fireworks.firetasks import BuildCausalityNetworkTask
+from wholecell.sim.simulation import DEFAULT_SIMULATION_KWARGS
+from wholecell.utils import constants
+from wholecell.utils import filepath
+
 #from models.ecoli.sim.variants import variants
 
 variants = [
@@ -341,7 +368,7 @@ def get_param_descriptions():
 
 
 def clean_user_params(raw):
-    cleaned = {}
+    cleaned_params = {}
 
     for key, rules in WF_RULES.items():
         val = raw.get(key, rules.get("default"))
@@ -374,6 +401,177 @@ def clean_user_params(raw):
             if bad:
                 raise ValueError(f"Invalid PLOTS tag(s): {bad}")
 
-        cleaned[key] = val
+        cleaned_params[key] = val
 
-    return cleaned
+    return cleaned_params
+
+
+def launch_workflow(user_params):
+    variants_to_run = list(range(
+        user_params["FIRST_VARIANT_INDEX"],
+        user_params["LAST_VARIANT_INDEX"] + 1
+    ))
+    assert user_params["OPERONS"] in constants.EXTENDED_OPERON_OPTIONS, f'{user_params["OPERONS"]=} needs to be in {constants.EXTENDED_OPERON_OPTIONS}'
+    assert user_params["PDR_COMBOS"] in constants.PROTEIN_DEGRADATION_COMBO_OPTIONS, f'{user_params["PDR_COMBOS"]=} needs to be in {constants.PROTEIN_DEGRADATION_COMBO_OPTIONS}'
+    sim_description = user_params["DESC"].replace(" ", "_")
+    if not user_params["RUN_AGGREGATE_ANALYSIS"]:
+        user_params["COMPRESS_OUTPUT"] = False
+    
+    out_dir = filepath.makedirs(filepath.ROOT_PATH, "out")
+    cached_dir = os.path.join(filepath.ROOT_PATH, "cached")
+    submission_time = filepath.timestamp()
+    if user_params["ANALYZE_FAST"]:
+        analysis_cpus = 8
+    else:
+        analysis_cpus = 1
+
+def log_info(
+        message: str, 
+        indent: int = 0, 
+        verbose_flag: bool = False,
+        message_level: int = 0
+    ) -> None:
+    """Log an informational message with indentation.
+
+    Args:
+        message: The message to log.
+        indent: The number of spaces to indent the message.
+        verbose_flag: If True, print the message; otherwise, do nothing.
+        message_level: Level of the message (0=info, 1=warning, >1=error).
+    """
+    if verbose_flag:
+        if message_level == 0:
+            print(f"{' ' * indent}{message}")
+        elif message_level == 1:
+            print(f"{' ' * indent}[Warning {message_level}] {message}")
+    if message_level > 1:
+        print(f"{' ' * indent}[Error {message_level}] {message}")
+
+class WorkflowBuilder:
+    def __init__(self, user_params: Dict) -> None:
+        self.fireworks: List[Firework] = [] # List of Fireworks in the workflow
+        self.dependencies: Dict[Firework, List[Firework]] = collections.defaultdict(list) # Dependencies between Fireworks
+        self.operons = ''
+        self.name_suffix = ''
+        self.user_params = user_params
+
+        # AnalysisComparisonTask depends on AnalysisVariantTask
+        #   and so, indirectly, on simulation tasks
+        self.fw_variant_analysis = None
+
+    def add_firework(self,
+        firetask: FiretaskBase,
+        name: str,
+        parents: Union[None, Firework, List[Firework]] = None,
+        cpus: int = 1,
+        priority: Optional[int] = None,
+        indent: int = 0
+    ) -> Firework:
+        """Add a Firework to the workflow.
+
+        Args:
+            firetask: The FiretaskBase instance to run in this Firework.
+            name: Name of the Firework.
+            parents: Parent Firework(s) that this Firework depends on.
+            cpus: Number of CPUs to allocate for this Firework.
+            priority: Priority of the Firework. Larger numbers indicate higher priority. None means lowest priority.
+            indent: Indentation level for logging output.
+        """
+        name += self.name_suffix
+        log_info(f"Adding Firework: {name}", indent=indent, verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        
+        queue_spec = {
+            'job_name': name,
+            'cpus_per_task': cpus
+        }
+        spec: Dict[str, Any] = {
+            '_queueadapter': queue_spec
+        }
+        if priority is not None:
+            spec['_priority'] = priority
+
+        fw = Firework(
+            firetask,
+            name=name,
+            spec=spec,
+            parents=parents
+        )
+        self.fireworks.append(fw)
+        return fw
+
+    def add_dependency(self, parent: Firework, *children: Firework) -> None:
+        """Add a dependency between parent and child Fireworks.
+
+        Args:
+            parent: The parent Firework.
+            children: The child Firework that depends on the parent.
+        """
+        self.wf_links[parent].extend(children)
+
+    def build_workflow(self, operons: str) -> Workflow:
+        """
+            Build and return the Whole Cell Model Workflow object.
+            Includes Parca, sims, analysis and output file compression.
+        """
+        self.operons = operons
+        self.name_suffix = (
+            constants.OPERON_SUFFIX if self.user_params["OPERONS"] == "both" and operons == "on"
+            else ""
+        )
+        log_info(f"\n--- Building WCM workflow with operons={operons} ---", indent=0, verbose_flag=True)
+        
+        self.make_output_directories()
+        self.write_metadata()
+        return self.build_wcm_firetasks()
+    
+    def make_output_directories(self) -> None:
+        """
+            Create output directories for the workflow and
+            set self.* fields to some of those paths.
+        """
+        pass  # Implementation goes here
+
+    def write_metadata(self) -> None:
+        """
+            Write metadata about the workflow to the output directory.
+        """
+        pass  # Implementation goes here
+
+    def build_wcm_firetasks(self) -> Workflow:
+        """
+            Build the Fireworks workflow for the Whole Cell Model.
+        """
+        pass  # Implementation goes here
+
+    def describe(self) -> None:
+        """
+            Print a description of the workflow.
+        """
+        log_info("\n--- Workflow Summary ---")
+        log_info(f"Total Fireworks: {len(self.wf_fws)}")
+        total_links = sum(len(v) for v in self.wf_links.values())
+        log_info(f"Total Dependency Links: {total_links}")
+        log_info("------------------------\n")
+        log_info("\n--- Task List ---")
+        for fw in self.wf_fws:
+            log_info(f"\nFirework: {fw.name}, Parents: {[p.name for p in fw.parents]}, Children: {[c.name for c in self.wf_links.get(fw, [])]}")
+            log_info(f"\nDescribe: \n")
+            desc = "\n".join(f"  {key}: {value}" for key, value in fw.describe().items())
+            log_info(desc)
+            log_info("\n------------------------")
+    
+    def upload(self) -> None:
+        """
+            Upload the workflow to the FireWorks launchpad.
+        """
+        #lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
+        #lpad.add_wf(self.convert_to_fireworks_workflow())
+        log_info("Workflow uploaded to launchpad.", verbose_flag=True)
+        self.lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
+    
+    def convert_to_fireworks_workflow(self) -> Workflow:
+        """
+            Convert the internal representation to a FireWorks Workflow object
+            using the Firetask and dependency information stored in the builder.
+        """
+        return Workflow(self.wf_fws, links_dict=self.wf_links)

@@ -4,7 +4,7 @@ from markupsafe import Markup
 import markdown
 import os
 import time
-from fw_logic_and_launch import WF_RULES
+from fw_logic_and_launch import WF_RULES, get_param_defaults, get_param_descriptions, get_param_types, clean_user_params, launch_workflow, WorkflowBuilder
 
 app = Flask(
     __name__,
@@ -193,7 +193,7 @@ def submit_comment(page_id):
     return redirect(request.referrer or url_for("home"))
 
 
-@app.route("/submit/", methods=["POST"])
+@app.route("/submit", methods=["POST"])
 def submit_workflow():
     user_params = {}
 
@@ -202,6 +202,64 @@ def submit_workflow():
         if raw_value is not None:
             user_params[name] = raw_value
     return f"Submitted parameters: {user_params}"
+
+
+@app.route("/status", methods=["GET"])
+def workflow_status_page():
+    """
+    Display the status of each running workflow.
+    """
+    # Placeholder: In a real implementation, fetch workflow statuses from the database or workflow manager
+    workflow_statuses = [
+        {
+            "wf_id": 42,
+            "name": "Whole Cell Simulation – Batch A",
+            "state": "RUNNING",
+            "progress": 0.62,
+            "fireworks": [
+                {
+                "name": "Build Model",
+                "state": "COMPLETED"
+                },
+                {
+                "name": "Simulation",
+                "state": "RUNNING",
+                "host": "rcp-node-07"
+                },
+                {
+                "name": "Analysis",
+                "state": "READY"
+                }
+            ]
+        },
+        {
+            "wf_id": 42,
+            "name": "Whole Cell Simulation – Batch A",
+            "state": "RUNNING",
+            "progress": 0.62,
+            "fireworks": [
+                {
+                "name": "Build Model",
+                "state": "COMPLETED"
+                },
+                {
+                "name": "Simulation",
+                "state": "RUNNING",
+                "host": "rcp-node-07"
+                },
+                {
+                "name": "Analysis",
+                "state": "READY"
+                }
+            ]
+        }
+    ]
+    
+    return render_template(
+        "running.html",
+        workflows=workflow_statuses
+    )
+
 
 
 if __name__ == "__main__":

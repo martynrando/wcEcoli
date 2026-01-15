@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Running Workflows</h1>
+
+<p class="intro">
+This page shows active and recent workflows in the Whole Cell Model system,
+including their current state and progress through computational steps.
+</p>
+
+<div id="workflow-container">
+
+  {% if workflows|length == 0 %}
+    <p><em>No workflows are currently running.</em></p>
+  {% endif %}
+
+  {% for wf in workflows %}
+
+  <div class="workflow-card">
+
+    <!-- Workflow header -->
+    <div class="workflow-header">
+      <h2>{{ wf.name }}</h2>
+      <span class="workflow-state state-{{ wf.state|lower }}">
+        {{ wf.state }}
+      </span>
+    </div>
+
+    <!-- Optional user notes -->
+    {% if wf.notes %}
+    <div class="workflow-notes">
+      <strong>Notes:</strong> {{ wf.notes }}
+    </div>
+    {% endif %}
+
+    <!-- Progress bar -->
+    <div class="progress-bar">
+      <div class="progress-fill"
+           style="width: {{ (wf.progress * 100) | round(1) }}%">
+      </div>
+    </div>
+    <div class="progress-text">
+      {{ (wf.progress * 100) | round(1) }}% complete
+    </div>
+
+    <!-- Workflow steps -->
+    <div class="workflow-steps">
+      {% for fw in wf.fireworks %}
+
+      <div class="workflow-step state-{{ fw.state|lower }}">
+
+        <div class="step-icon">
+          {% if fw.state == "COMPLETED" %}✓
+          {% elif fw.state == "RUNNING" %}▶
+          {% elif fw.state == "FIZZLED" %}✖
+          {% else %}○{% endif %}
+        </div>
+
+        <div class="step-details">
+          <div class="step-name">{{ fw.name }}</div>
+
+          {% if fw.host %}
+          <div class="step-meta">
+            Running on {{ fw.host }}
+          </div>
+          {% endif %}
+        </div>
+
+      </div>
+
+      {% endfor %}
+    </div>
+
+  </div>
+
+  {% endfor %}
+
+</div>
+
+{% endblock %}
