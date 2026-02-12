@@ -406,7 +406,7 @@ def clean_user_params(raw):
     return cleaned_params
 
 
-def launch_workflow(user_params):
+def prep_user_params(user_params):
     user_params["variants_to_run"] = list(range(
         user_params["FIRST_VARIANT_INDEX"],
         user_params["LAST_VARIANT_INDEX"] + 1
@@ -424,6 +424,7 @@ def launch_workflow(user_params):
         user_params["analysis_cpus"] = 8
     else:
         user_params["analysis_cpus"] = 1
+    return user_params
 
 def log_info(
         message: str, 
@@ -1294,6 +1295,7 @@ def upload(fireworks_workflow, launchpad_file) -> None:
 def build_and_submit(user_params = None):
     if not user_params:
         user_params = clean_user_params(get_param_defaults())
+    user_params = prep_user_params(user_params=user_params)
     builder = WorkflowBuilder(user_params=user_params)
 
     if user_params["OPERONS"] == 'both':
