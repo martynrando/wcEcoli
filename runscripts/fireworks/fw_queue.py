@@ -377,7 +377,8 @@ class WorkflowBuilder:
 					 parents: Union[None, Firework, List[Firework]] = None,
 					 cpus: int = 1,
 					 priority: Optional[int] = None,
-					 indent: int = 0) -> Firework:
+					 indent: int = 0
+					 ) -> Firework:
 		"""Construct a Firework and add it to the accumulating list.
 
 		Args:

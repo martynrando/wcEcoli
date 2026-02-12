@@ -4,7 +4,7 @@ from markupsafe import Markup
 import markdown
 import os
 import time
-from fw_logic_and_launch import WF_RULES, get_param_defaults, get_param_descriptions, get_param_types, clean_user_params, launch_workflow, WorkflowBuilder
+from fw_logic_and_launch import WF_RULES, get_param_defaults, get_param_descriptions, get_param_types, clean_user_params, launch_workflow, WorkflowBuilder, build_and_submit
 
 app = Flask(
     __name__,
@@ -12,8 +12,14 @@ app = Flask(
     static_folder="static"
 )
 mongoclient = MongoClient("mongodb://172.17.0.1:27017/")
+# mongodb comments collection
 webdocs_db = mongoclient["wcecoli_webdocs"]
 comments_collection = webdocs_db["comments"]
+# fireworks collection
+fw_db = mongoclient["root"]
+fw_collection = fw_db["fireworks"]
+wf_collection = fw_db["workflows"]
+launch_collection = fw_db["launches"]
 
 # Path to files
 BASE_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))  # docs/
@@ -201,6 +207,7 @@ def submit_workflow():
         raw_value = request.form.get(name)
         if raw_value is not None:
             user_params[name] = raw_value
+    build_and_submit(user_params=user_params)
     return f"Submitted parameters: {user_params}"
 
 
@@ -210,51 +217,41 @@ def workflow_status_page():
     Display the status of each running workflow.
     """
     # Placeholder: In a real implementation, fetch workflow statuses from the database or workflow manager
-    workflow_statuses = [
-        {
-            "wf_id": 42,
-            "name": "Whole Cell Simulation – Batch A",
-            "state": "RUNNING",
-            "progress": 0.62,
-            "fireworks": [
-                {
-                "name": "Build Model",
-                "state": "COMPLETED"
-                },
-                {
-                "name": "Simulation",
-                "state": "RUNNING",
-                "host": "rcp-node-07"
-                },
-                {
-                "name": "Analysis",
-                "state": "READY"
-                }
-            ]
-        },
-        {
-            "wf_id": 42,
-            "name": "Whole Cell Simulation – Batch A",
-            "state": "RUNNING",
-            "progress": 0.62,
-            "fireworks": [
-                {
-                "name": "Build Model",
-                "state": "COMPLETED"
-                },
-                {
-                "name": "Simulation",
-                "state": "RUNNING",
-                "host": "rcp-node-07"
-                },
-                {
-                "name": "Analysis",
-                "state": "READY"
-                }
-            ]
-        }
-    ]
-    
+    workflow_statuses = []
+    for wf_doc in wf_collection.find():
+        wf_id = wf_doc.get("wf_id")
+        wf_name = wf_doc.get("name", f"Workflow {wf_id}")
+        wf_spec = wf_doc.get("spec", {})
+        wf_notes = wf_doc.get("notes", "")
+        fws = []
+        total_count = 0
+        completed_count = 0
+
+        fw_docs = fw_collection.find({"wf_id": wf_id}).sort("created_at", 1)
+        for fw_doc in fw_docs:
+            if fw_doc.get("status") == "COMPLETED":
+                completed_count += 1
+            total_count += 1
+            fws.append({
+                "fw_id": str(fw_doc["_id"]),
+                "name": fw_doc.get("name", f"FW {fw_doc['_id']}"),
+                "status": fw_doc.get("status", "UNKNOWN"),
+                "state": fw_doc.get("state", {}),
+                "host": fw_doc.get("host", "N/A"),
+                "created_at": fw_doc.get("created_at"),
+                "updated_at": fw_doc.get("updated_at"),
+            })
+        workflow_statuses.append({
+            "workflow_id": str(wf_doc["_id"]),
+            "name": wf_name,
+            "notes": wf_notes,
+            "spec": wf_spec,
+            "fireworks": fws,
+            "progress": f"{completed_count} / {total_count} FWs completed"
+            "status": status,
+            "details": wf_builder.get_details()
+        }))
+    workflow_statuses.sort(key=lambda x: x["workflow_id"])
     return render_template(
         "running.html",
         workflows=workflow_statuses

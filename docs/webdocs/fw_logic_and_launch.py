@@ -407,23 +407,23 @@ def clean_user_params(raw):
 
 
 def launch_workflow(user_params):
-    variants_to_run = list(range(
+    user_params["variants_to_run"] = list(range(
         user_params["FIRST_VARIANT_INDEX"],
         user_params["LAST_VARIANT_INDEX"] + 1
     ))
     assert user_params["OPERONS"] in constants.EXTENDED_OPERON_OPTIONS, f'{user_params["OPERONS"]=} needs to be in {constants.EXTENDED_OPERON_OPTIONS}'
     assert user_params["PDR_COMBOS"] in constants.PROTEIN_DEGRADATION_COMBO_OPTIONS, f'{user_params["PDR_COMBOS"]=} needs to be in {constants.PROTEIN_DEGRADATION_COMBO_OPTIONS}'
-    sim_description = user_params["DESC"].replace(" ", "_")
+    user_params["sim_description"] = user_params["DESC"].replace(" ", "_")
     if not user_params["RUN_AGGREGATE_ANALYSIS"]:
         user_params["COMPRESS_OUTPUT"] = False
     
-    out_dir = filepath.makedirs(filepath.ROOT_PATH, "out")
-    cached_dir = os.path.join(filepath.ROOT_PATH, "cached")
-    submission_time = filepath.timestamp()
+    user_params["out_dir"] = filepath.makedirs(filepath.ROOT_PATH, "out")
+    user_params["cached_dir"] = os.path.join(filepath.ROOT_PATH, "cached")
+    user_params["submission_time"] = filepath.timestamp()
     if user_params["ANALYZE_FAST"]:
-        analysis_cpus = 8
+        user_params["analysis_cpus"] = 8
     else:
-        analysis_cpus = 1
+        user_params["analysis_cpus"] = 1
 
 def log_info(
         message: str, 
@@ -446,6 +446,9 @@ def log_info(
             print(f"{' ' * indent}[Warning {message_level}] {message}")
     if message_level > 1:
         print(f"{' ' * indent}[Error {message_level}] {message}")
+    if False:
+        # For when we want to print absolutely every message regardless of verbosity
+        print(f"{'>' * indent}{message}")
 
 class WorkflowBuilder:
     def __init__(self, user_params: Dict) -> None:
@@ -454,6 +457,10 @@ class WorkflowBuilder:
         self.operons = ''
         self.name_suffix = ''
         self.user_params = user_params
+
+        log_info(f"Initialized WorkflowBuilder with user_params:", verbose_flag=self.user_params["VERBOSE_QUEUE"], message_level=-1)
+        for key, value in self.user_params.items():
+            log_info(f"  {key}: {value}", verbose_flag=self.user_params["VERBOSE_QUEUE"], message_level=-1)
 
         # AnalysisComparisonTask depends on AnalysisVariantTask
         #   and so, indirectly, on simulation tasks
@@ -506,7 +513,7 @@ class WorkflowBuilder:
             parent: The parent Firework.
             children: The child Firework that depends on the parent.
         """
-        self.wf_links[parent].extend(children)
+        self.dependencies[parent].extend(children)
 
     def build_workflow(self, operons: str) -> Workflow:
         """
@@ -518,30 +525,738 @@ class WorkflowBuilder:
             constants.OPERON_SUFFIX if self.user_params["OPERONS"] == "both" and operons == "on"
             else ""
         )
-        log_info(f"\n--- Building WCM workflow with operons={operons} ---", indent=0, verbose_flag=True)
+        log_info(f"\n--- Building WCM workflow with operons={operons} ---", verbose_flag=True)
         
         self.make_output_directories()
         self.write_metadata()
         return self.build_wcm_firetasks()
     
-    def make_output_directories(self) -> None:
+    def make_output_directories(self, 
+            SUBMISSION_TIME = filepath.timestamp()
+        ) -> None:
         """
             Create output directories for the workflow and
             set self.* fields to some of those paths.
         """
+        log_info("Creating output directories...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        self.INDIV_OUT_DIRECTORY = filepath.makedirs(
+            self.user_params["out_dir"], 
+            f"{self.user_params['submission_time']}__{self.user_params['sim_description']}{self.name_suffix}"
+        )
+        self.KB_DIRECTORY = filepath.makedirs(
+            self.user_params["indiv_out_directory"],
+            constants.KB_DIR
+        )
+        self.VARIANT_PLOT_DIRECTORY = filepath.makedirs(
+            self.user_params["indiv_out_directory"],
+            constants.PLOTOUT_DIR
+        )
+
+        number_of_individual_cells = 0
+        for i in self.user_params["variants_to_run"]:
+            VARIANT_DIRECTORY = filepath.makedirs(
+                self.user_params["indiv_out_directory"],
+                f"variant_{i:03d}"
+            )
+            for j in range(self.user_params["SEED"], self.user_params["SEED"] + self.user_params["N_INIT_SIMS"]):
+                SEED_DIRECTORY = filepath.makedirs(
+                    VARIANT_DIRECTORY,
+                    f"sim_{j:03d}"
+                )
+                for k in range(self.user_params["N_GENS"]):
+                    GEN_DIRECTORY = filepath.makedirs(
+                        SEED_DIRECTORY,
+                        f"gen_{k+1:03d}"
+                    )
+                    for l in range(2**k) if not self.user_params["SINGLE_DAUGHTERS"] else range(1):
+                        CELL_DIRECTORY = filepath.makedirs(
+                            GEN_DIRECTORY,
+                            f"daughter_{l+1:03d}"
+                        )
+                        number_of_individual_cells += 1
+        log_info(f"Created output directories for {number_of_individual_cells} individual cells.")
         pass  # Implementation goes here
 
     def write_metadata(self) -> None:
         """
             Write metadata about the workflow to the output directory.
         """
+        self.metadata = {
+			"git_hash": filepath.git_hash(),
+			"git_branch": filepath.git_branch(),
+			"description": os.environ.get("DESC", ""),
+			"operons": self.operons,
+			"new_genes": self.user_params["NEW_GENES"],
+			"pdr_combos": self.user_params["PDR_COMBOS"],
+			"remove_rrna_operons": self.user_params["REMOVE_RRNA_OPERONS"],
+			"remove_rrff": self.user_params["REMOVE_RRFF"],
+			"stable_rrna": self.user_params["STABLE_RRNA"],
+			"time": self.user_params["SUBMISSION_TIME"],
+			"python": sys.version.splitlines()[0],
+			"total_gens": self.user_params["N_GENS"],
+			"total_init_sims": self.user_params["N_INIT_SIMS"],
+			"analysis_type": self.user_params["None"],
+			"variant": self.user_params["VARIANT"],
+			"total_variants": str(len(self.user_params["variants_to_run"])),
+			"mass_distribution": self.user_params["MASS_DISTRIBUTION"],
+			"d_period_division": self.user_params["D_PERIOD_DIVISION"],
+			"variable_elongation_transcription": self.user_params["VARIABLE_ELONGATION_TRANSCRIPTION"],
+			"variable_elongation_translation": self.user_params["VARIABLE_ELONGATION_TRANSLATION"],
+			"translation_supply": self.user_params["TRANSLATION_SUPPLY"],
+			"trna_charging": self.user_params["TRNA_CHARGING"],
+			"aa_supply_in_charging": self.user_params["AA_SUPPLY_IN_CHARGING"],
+			"ppgpp_regulation": self.user_params["PPGPP_REGULATION"],
+			"disable_ppgpp_elongation_inhibition": self.user_params["DISABLE_PPGPP_ELONGATION_INHIBITION"],
+			"superhelical_density": self.user_params["SUPERHELICAL_DENSITY"],
+			"recycle_stalled_elongation": self.user_params["RECYCLE_STALLED_ELONGATION"],
+			"mechanistic_replisome": self.user_params["MECHANISTIC_REPLISOME"],
+			"mechanistic_translation_supply": self.user_params["MECHANISTIC_TRANSLATION_SUPPLY"],
+			"mechanistic_aa_transport": self.user_params["MECHANISTIC_AA_TRANSPORT"],
+			"trna_attenuation": self.user_params["TRNA_ATTENUATION"],
+			"adjust_timestep_for_charging": self.user_params["ADJUST_TIMESTEP_FOR_CHARGING"],
+		}
+        METADATA_DIRECTORY = filepath.makedirs(
+            self.user_params["indiv_out_directory"],
+            constants.METADATA_DIR
+        )
+        filepath.write_json_file(
+            os.path.join(METADATA_DIRECTORY, constants.JSON_METADATA_FILE),
+            self.metadata
+        )
+        log_info("Wrote workflow metadata.", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        git_diff = filepath.run_cmd_line("git diff HEAD", trim=False)
+        if git_diff:
+            filepath.write_text_file(
+                os.path.join(METADATA_DIRECTORY, "git_diff.txt"),
+                git_diff
+            )
+            log_info("Wrote git diff to metadata.", verbose_flag=self.user_params["VERBOSE_QUEUE"])
         pass  # Implementation goes here
 
     def build_wcm_firetasks(self) -> Workflow:
         """
             Build the Fireworks workflow for the Whole Cell Model.
+            This includes all Firetasks and their dependencies.
+
+            Call convert_to_fireworks_workflow() to get the Workflow object.
+            Returns a parent for comparison analysis.
         """
+        # Initialise knowledge base
+        log_info("Initializing knowledge base...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        fw_init_raw_data = self.add_firework(
+            InitRawDataTask(
+                operons = self.operons,
+                new_genes = self.user_params["NEW_GENES"],
+                protein_degradation_combos = self.user_params["PDR_COMBOS"],
+                remove_rrna_operons = self.user_params["REMOVE_RRNA_OPERONS"],
+                remove_rrff = self.user_params["REMOVE_RRFF"],
+                stable_rrna = self.user_params["STABLE_RRNA"],
+                output=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_RAW_DATA
+                )
+            ),
+            name="InitRawData",
+            priority=12
+        )
+
+        # Calculate simulated data for variants
+        log_info("Building variant simulation tasks...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        cpus_for_parca = 8 if self.user_params["PARALLEL_PARCA"] else 1
+        fw_calculate_sim_data = self.add_firework(
+            FitSimDataTask(
+                input_data=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_RAW_DATA
+                ),
+                output_data=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_SIM_DATA_FILENAME
+                ),
+                cached = self.user_params["cached_dir"],
+                cached_data = os.path.join(
+                    self.user_params["cached_dir"],
+                    constants.SERIALIZED_SIM_DATA_FILENAME
+                ),
+                cpus = cpus_for_parca,
+                debug = self.user_params["DEBUG_PARCA"],
+                disable_ribosome_capacity_fitting = self.user_params["DISABLE_RIBOSOME_CAPACITY_FITTING"],
+                disable_rnapoly_capacity_fitting = self.user_params["DISABLE_RNAPOLY_CAPACITY_FITTING"],
+                output_metrics_data=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_METRICS_DATA_FILENAME
+                )
+            ),
+            name="CalculateSimData",
+            parents=fw_init_raw_data,
+            cpus=cpus_for_parca,
+            priority=10
+        )
+
+        # Raw Knowledge Base compression
+        fw_raw_data_compress = None
+        if self.user_params["COMPRESS_OUTPUT"]:
+            log_info("Building knowledge base compression task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+            fw_raw_data_compress = self.add_firework(
+                ScriptTask(
+                    script=f"bzip2 -v {os.path.join(self.KB_DIRECTORY, constants.SERIALIZED_RAW_DATA)}"
+                ),
+                name="CompressRawData",
+                parents=fw_calculate_sim_data
+            )
+
+        # Simulation data compression
+        log_info("Building simulation data compression task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        fw_sim_data_1_compress = None
+        if self.user_params["COMPRESS_OUTPUT"]:
+            fw_sim_data_1_compress = self.add_firework(
+                ScriptTask(
+                    script=f"bzip2 -v {os.path.join(self.KB_DIRECTORY, constants.SERIALIZED_SIM_DATA_FILENAME)}"
+                ),
+                name="CompressSimData",
+                parents=fw_calculate_sim_data
+            )
+        
+        # Initialise raw validation data
+        log_info("Initializing raw validation data...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        fw_init_raw_validation_data = self.add_firework(
+            InitRawValidationDataTask(
+                output=os.path.join(
+                    self.kb_directory,
+                    constants.SERIALIZED_RAW_VALIDATION_DATA
+                )
+            ),
+            name="InitRawValidationData",
+            priority=12
+        )
+
+        # Raw validation data compression
+        fw_raw_validation_data_compress = None
+        if self.user_params["COMPRESS_OUTPUT"]:
+            log_info("Building raw validation data compression task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+            fw_raw_validation_data_compress = self.add_firework(
+                ScriptTask(
+                    script=f"bzip2 -v {os.path.join(self.KB_DIRECTORY, constants.SERIALIZED_RAW_VALIDATION_DATA)}"
+                ),
+                name="CompressRawValidationData",
+                parents=fw_init_raw_validation_data
+            )
+        
+        # Initialise validation data
+        log_info("Initializing validation data...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        fw_init_validation_data = self.add_firework(
+            InitValidationDataTask(
+                validation_data_input=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_RAW_VALIDATION_DATA
+                ),
+                knowledge_base_raw=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_RAW_DATA
+                ),
+                output=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_VALIDATION_DATA
+                )
+            ),
+            name="InitValidationData",
+            parents=[fw_init_raw_validation_data, fw_init_raw_data],
+            priority=12
+        )
+
+        # Validation data compression
+        fw_validation_data_compress = None
+        if self.user_params["COMPRESS_OUTPUT"]:
+            log_info("Building validation data compression task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+            fw_validation_data_compress = self.add_firework(
+                ScriptTask(
+                    script=f"bzip2 -v {os.path.join(self.KB_DIRECTORY, constants.SERIALIZED_VALIDATION_DATA)}"
+                ),
+                name="CompressValidationData"
+            )
+            self.add_dependency(
+                fw_init_validation_data,
+                fw_raw_validation_data_compress,
+                fw_raw_data_compress
+            )
+        
+        # Parca analysis
+        fw_variant_analysis = None
+        if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+            log_info("Building variant analysis task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+            fw_parca_analysis = self.add_firework(
+                AnalysisParcaTask(
+                    input_directory=self.KB_DIRECTORY,
+                    input_sim_data=os.path.join(
+                        self.KB_DIRECTORY,
+                        constants.SERIALIZED_SIM_DATA_FILENAME
+                    ),
+                    input_validation_data=os.path.join(
+                        self.KB_DIRECTORY,
+                        constants.SERIALIZED_VALIDATION_DATA
+                    ),
+                    output_plots_directory=os.path.join(
+                        self.user_params["indiv_out_directory"],
+                        constants.KB_PLOT_OUTPUT_DIR
+                    ),
+                    plot=self.user_params["PLOTS"],
+                    cpus=self.user_params["analysis_cpus"],
+                    metadata=self.metadata
+                ),
+                name="ParcaAnalysis",
+                parents=[
+                    fw_calculate_sim_data,
+                    fw_init_validation_data
+                ],
+                cpus=self.user_params["analysis_cpus"],
+                priority=5
+            )
+            if self.user_params["COMPRESS_OUTPUT"]:
+                self.add_dependency(
+                    fw_parca_analysis,
+                    fw_sim_data_1_compress
+                )
+                self.add_dependency(
+                    fw_parca_analysis,
+                    fw_validation_data_compress
+                )
+        
+        # Variant analysis
+        log_info("Building variant analysis task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        self.fw_variant_analysis = fw_variant_analysis = self.add_firework(
+            AnalysisVariantTask(
+                input_directory=self.KB_DIRECTORY,
+                input_sim_data=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_SIM_DATA_FILENAME
+                ),
+                input_validation_data=os.path.join(
+                    self.KB_DIRECTORY,
+                    constants.SERIALIZED_VALIDATION_DATA
+                ),
+                output_plots_directory=self.VARIANT_PLOT_DIRECTORY,
+                plot=self.user_params["PLOTS"],
+                cpus=self.user_params["analysis_cpus"],
+                metadata=self.metadata
+            ),
+            name="VariantAnalysis",
+            cpus=self.user_params["analysis_cpus"],
+            priority=5
+        )
+
+        # EcoCyc export
+        fw_ecocyc_export = None
+        if self.user_params["EXPORT_ECOCYC_FILES"]:
+            log_info("Building EcoCyc export task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+            fw_ecocyc_export = self.add_firework(
+                ScriptTask(
+                    script=f"bash {os.path.join(filepath.ROOT_PATH, 'runscripts', 'ecocyc', 'export_ecocyc_files.sh')} " + self.user_params["indiv_out_directory"]
+                ),
+                name="EcoCycExport"
+            )
+        
+        # Create variants and simulations
+        log_info("Building variant and simulation tasks...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        fw_this_variant_sim_data_compression = None
+        fw_this_variant_this_gen_this_sim_compression = None
+        for i in self.user_params["variants_to_run"]:
+            VARIANT_DIRECTORY = os.path.join(
+                self.user_params["indiv_out_directory"],
+                f"variant_{i:03d}"
+            )
+            VARIANT_SIM_DATA_DIRECTORY = os.path.join(
+                VARIANT_DIRECTORY,
+                constants.VKB_DIR,
+            )
+            VARIANT_METADATA_DIRECTORY = os.path.join(
+                VARIANT_DIRECTORY,
+                constants.METADATA_DIR
+            )
+            md_cohort = dict(
+                self.metadata,
+                variant_function = self.user_params["VARIANT"],
+                variant_index = i
+            )
+
+            # Create variant-specific sim data
+            # Note: this task doesn't depend on fw_validation_data but such a link
+            # is lightweight compared to making every analysis task depend on it. (I don't know what this note means!)
+            fw_this_variant_sim_data = self.add_firework(
+                VariantSimDataTask(
+                    variant_function=self.user_params["VARIANT"],
+                    variant_index=i,
+                    input_sim_data=os.path.join(
+                        self.KB_DIRECTORY,
+                        constants.SERIALIZED_SIM_DATA_FILENAME
+                    ),
+                    output_data=os.path.join(
+                        VARIANT_SIM_DATA_DIRECTORY,
+                        constants.SERIALIZED_SIM_DATA_MODIFIED
+                    )
+                ),
+                name=f"VariantSimData_variant_{i:03d}",
+                parents=[fw_calculate_sim_data, fw_init_validation_data],
+                priority=12
+            )
+
+            if self.user_params["COMPRESS_OUTPUT"]:
+                self.add_dependency(
+                    fw_this_variant_sim_data,
+                    fw_sim_data_1_compress
+                )
+                fw_this_variant_sim_data_compression = self.add_firework(
+                    ScriptTask(
+                        script=f"bzip2 -v {os.path.join(VARIANT_SIM_DATA_DIRECTORY, constants.SERIALIZED_SIM_DATA_MODIFIED)}"
+                    ),
+                    name=f"CompressVariantSimData_variant_{i:03d}",
+                    parents=fw_this_variant_sim_data
+                )
+            
+            # Cohort analysis for this variant
+            COHORT_PLOT_DIRECTORY = os.path.join(
+                VARIANT_DIRECTORY,
+                constants.PLOTOUT_DIR
+            )
+            fw_this_variant_analysis = None
+            if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+                fw_this_variant_cohort_analysis = self.add_firework(
+                    AnalysisCohortTask(
+                        input_directory=VARIANT_DIRECTORY,
+                        input_sim_data=os.path.join(
+                            VARIANT_SIM_DATA_DIRECTORY,
+                            constants.SERIALIZED_SIM_DATA_MODIFIED
+                        ),
+                        input_validation_data=os.path.join(
+                            self.KB_DIRECTORY,
+                            constants.SERIALIZED_VALIDATION_DATA
+                        ),
+                        output_plots_directory=COHORT_PLOT_DIRECTORY,
+                        plot=self.user_params["PLOTS"],
+                        cpus=self.user_params["analysis_cpus"],
+                        metadata=md_cohort
+                    ),
+                    name=f"CohortAnalysis_variant_{i:03d}",
+                    cpus=self.user_params["analysis_cpus"],
+                    priority=5
+                )
+
+                fw_this_variant_ecocyc_analysis = None
+                if self.user_params["EXPORT_ECOCYC_FILES"]:
+                    fw_this_variant_ecocyc_analysis = self.add_firework(
+                        AnalysisCohortTask(
+                            input_directory=VARIANT_DIRECTORY,
+                            input_sim_data=os.path.join(
+                                VARIANT_SIM_DATA_DIRECTORY,
+                                constants.SERIALIZED_SIM_DATA_MODIFIED
+                            ),
+                            input_validation_data=os.path.join(
+                                self.KB_DIRECTORY,
+                                constants.SERIALIZED_VALIDATION_DATA
+                            ),
+                            output_plots_directory=COHORT_PLOT_DIRECTORY,
+                            plot=["ecocyc"],
+                            cpus=16,
+                            metadata=md_cohort
+                        ),
+                        name=f"EcoCycAnalysis_variant_{i:03d}",
+                        cpus=16,
+                        priority=5
+                    )
+                    self.add_dependency(
+                        fw_this_variant_ecocyc_analysis,
+                        fw_ecocyc_export
+                    )
+                
+                fw_this_variant_this_seed_multigen_analysis = None
+                for j in range(self.user_params["SEED"], self.user_params["SEED"] + self.user_params["N_INIT_SIMS"]):
+                    SEED_DIRECTORY = os.path.join(
+                        VARIANT_DIRECTORY,
+                        f"sim_{j:03d}"
+                    )
+                    SEED_PLOT_DIRECTORY = os.path.join(
+                        SEED_DIRECTORY,
+                        constants.PLOTOUT_DIR
+                    )
+                    md_multigen = dict(
+                        md_cohort,
+                        seed=j
+                    )
+
+                    if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+                        fw_this_variant_this_seed_multigen_analysis = self.add_firework(
+                            AnalysisMultiGenTask(
+                                input_seed_directory=SEED_DIRECTORY,
+                                input_sim_data=os.path.join(
+                                    VARIANT_SIM_DATA_DIRECTORY,
+                                    constants.SERIALIZED_SIM_DATA_MODIFIED
+                                ),
+                                input_validation_data=os.path.join(
+                                    self.KB_DIRECTORY,
+                                    constants.SERIALIZED_VALIDATION_DATA
+                                ),
+                                output_plots_directory=SEED_PLOT_DIRECTORY,
+                                plot=self.user_params["PLOTS"],
+                                cpus=self.user_params["analysis_cpus"],
+                                metadata=md_multigen
+                            ),
+                            name=f"MultigenAnalysis_variant_{i:03d}_seed_{j:03d}",
+                            cpus=self.user_params["analysis_cpus"],
+                            priority=3,
+                            indent=1
+                        )
+                        if self.user_params["COMPRESS_OUTPUT"]:
+                            self.add_dependency(
+                                fw_this_variant_this_seed_multigen_analysis,
+                                fw_this_variant_sim_data_compression
+                            )
+                    
+                    sims_this_seed = collections.defaultdict(list)
+
+                    for k in range(self.user_params["N_GENS"]):
+                        GEN_DIRECTORY = os.path.join(
+                            SEED_DIRECTORY,
+                            f"gen_{k:03d}"
+                        )
+                        md_single = dict(
+                            md_multigen,
+                            gen=k
+                        )
+
+                        for l in range(2**k) if not self.user_params["SINGLE_DAUGHTERS"] else range(1):
+                            CELL_DIRECTORY = os.path.join(
+                                GEN_DIRECTORY,
+                                f"daughter_{l:03d}"
+                            )
+                            CELL_SIM_OUT_DIRECTORY = os.path.join(
+                                CELL_DIRECTORY,
+                                "simOut"
+                            )
+                            CELL_PLOT_OUT_DIRECTORY = os.path.join(
+                                CELL_DIRECTORY,
+                                constants.PLOTOUT_DIR
+                            )
+                            CELL_SERIES_OUT_DIRECTORY = os.path.join(
+                                CELL_DIRECTORY,
+                                "seriesOut"
+                            )
+
+                            # Simulation task for this cell
+                            sim_fw_name = f"Sim_variant_{i:03d}_seed_{j:03d}_gen_{k:03d}_daughter_{l:03d}"
+                            sim_task_args = dict(
+                                input_sim_data=os.path.join(
+                                    VARIANT_SIM_DATA_DIRECTORY,
+                                    constants.SERIALIZED_SIM_DATA_MODIFIED
+                                ),
+                                output_directory=CELL_SIM_OUT_DIRECTORY,
+                                timeline = self.user_params["TIMELINE"],
+                                length_sec = self.user_params["WC_LENGTH_SEC"],
+                                timestep_safety_frac = self.user_params["TIMESTEP_SAFETY_FRAC"],
+                                timestep_max = self.user_params["TIMESTEP_MAX"],
+                                timestep_update_freq = self.user_params["TIMESTEP_UPDATE_FREQ"],
+                                adjust_timestep_for_charging = self.user_params["ADJUST_TIMESTEP_FOR_CHARGING"],
+                                log_to_disk_every = self.user_params["LOG_TO_DISK_EVERY"],
+                                jit = self.user_params["JIT"],
+                                mass_distribution = self.user_params["MASS_DISTRIBUTION"],
+                                d_period_division = self.user_params["D_PERIOD_DIVISION"],
+                                variable_elongation_transcription = self.user_params["VARIABLE_ELONGATION_TRANSCRIPTION"],
+                                variable_elongation_translation = self.user_params["VARIABLE_ELONGATION_TRANSLATION"],
+                                translation_supply = self.user_params["TRANSLATION_SUPPLY"],
+                                trna_charging = self.user_params["TRNA_CHARGING"],
+                                aa_supply_in_charging = self.user_params["AA_SUPPLY_IN_CHARGING"],
+                                ppgpp_regulation = self.user_params["PPGPP_REGULATION"],
+                                disable_ppgpp_elongation_inhibition = self.user_params["DISABLE_PPGPP_ELONGATION_INHIBITION"],
+                                superhelical_density = self.user_params["SUPERHELICAL_DENSITY"],
+                                recycle_stalled_elongation = self.user_params["RECYCLE_STALLED_ELONGATION"],
+                                mechanistic_replisome = self.user_params["MECHANISTIC_REPLISOME"],
+                                mechanistic_translation_supply = self.user_params["MECHANISTIC_TRANSLATION_SUPPLY"],
+                                mechanistic_aa_transport = self.user_params["MECHANISTIC_AA_TRANSPORT"],
+                                trna_attenuation = self.user_params["TRNA_ATTENUATION"],
+                                raise_on_time_limit = self.user_params["RAISE_ON_TIME_LIMIT"]
+                            )
+                        
+                            if k==0:
+                                fw_this_variant_this_gen_this_sim = self.add_firework(
+                                    SimulationTask(
+                                        seed = j,
+                                        **sim_task_args
+                                    ),
+                                    name=sim_fw_name,
+                                    cpus=1,
+                                    priority=10,
+                                    indent=2
+                                )
+                            elif k>0:
+                                PARENT_GEN_DIRECTORY = os.path.join(
+                                    SEED_DIRECTORY,
+                                    f"gen_{k-1:03d}"
+                                )
+                                PARENT_CELL_DIRECTORY = os.path.join(
+                                    PARENT_GEN_DIRECTORY,
+                                    f"daughter_{l//2:03d}"
+                                )
+                                PARENT_CELL_SIM_OUT_DIRECTORY = os.path.join(
+                                    PARENT_CELL_DIRECTORY,
+                                    "simOut"
+                                )
+                                DAUGHTER_STATE_PATH = os.path.join(
+                                    PARENT_CELL_SIM_OUT_DIRECTORY,
+                                    constants.SERIALIZED_INHERITED_STATE % (l%2+1)
+                                )
+
+                                fw_this_variant_this_gen_this_sim = self.add_firework(
+                                    SimulationDaughterTask(
+                                        inherited_state_path = DAUGHTER_STATE_PATH,
+                                        seed = (j+1) * ((2**k-1)+l),
+                                        **sim_task_args
+                                    ),
+                                    name=sim_fw_name,
+                                    cpus=1,
+                                    priority=10,
+                                    indent=2
+                                )
+                            else:
+                                raise ValueError(f"Unexpected generation number: {k}")
+                            
+                            # add the last generation as dependencies for the multiple sim analysis
+                            if k == self.user_params["N_GENS"] - 1 and self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+                                self.add_dependency(
+                                    fw_this_variant_this_gen_this_sim,
+                                    fw_this_variant_this_seed_multigen_analysis,
+                                    fw_this_variant_cohort_analysis,
+                                    fw_variant_analysis
+                                )
+                            if self.user_params["EXPORT_ECOCYC_FILES"]:
+                                self.add_dependency(
+                                    fw_this_variant_this_gen_this_sim,
+                                    fw_this_variant_ecocyc_analysis
+                                )
+                            sims_this_seed[k].append(fw_this_variant_this_gen_this_sim)
+                            if k==0:
+                                self.add_dependency(
+                                    fw_this_variant_sim_data,
+                                    fw_this_variant_this_gen_this_sim
+                                )
+                            elif k>0:
+                                fw_parent_sim = sims_this_seed[k-1][l//2]
+                                self.add_dependency(
+                                    fw_parent_sim,
+                                    fw_this_variant_this_gen_this_sim
+                                )
+                            
+                            if self.user_params["COMPRESS_OUTPUT"]:
+                                fw_this_variant_this_gen_this_sim_compression = self.add_firework(
+                                    ScriptTask(
+                                        script='for dir in %s; do echo "Compressing $dir"; find "$dir" -type f| xargs bzip2; done' % os.path.join(
+                                            CELL_SIM_OUT_DIRECTORY,
+                                            "*"
+                                        )
+                                    ),
+                                    name=f"CompressSim_variant_{i:03d}_seed_{j:03d}_gen_{k:03d}_daughter_{l:03d}",
+                                    priority=0
+                                )
+                            
+                            if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+                                fw_this_variant_this_gen_this_sim_analysis = self.add_firework(
+                                    AnalysisSingleTask(
+                                        input_results_directory=CELL_SIM_OUT_DIRECTORY,
+                                        input_sim_data=os.path.join(
+                                            VARIANT_SIM_DATA_DIRECTORY,
+                                            constants.SERIALIZED_SIM_DATA_MODIFIED
+                                        ),
+                                        input_validation_data=os.path.join(
+                                            self.KB_DIRECTORY,
+                                            constants.SERIALIZED_VALIDATION_DATA
+                                        ),
+                                        output_plots_directory=CELL_PLOT_OUT_DIRECTORY,
+                                        plot=self.user_params["PLOTS"],
+                                        cpus=self.user_params["analysis_cpus"],
+                                        metadata=md_single
+                                    ),
+                                    name=f"SingleSimAnalysis_variant_{i:03d}_seed_{j:03d}_gen_{k:03d}_daughter_{l:03d}",
+                                    cpus=self.user_params["analysis_cpus"],
+                                    priority=1,
+                                    indent=3
+                                )
+                            
+                                if self.user_params["COMPRESS_OUTPUT"]:
+                                    data_fws = [
+                                        fw_this_variant_this_gen_this_sim_analysis,
+                                        fw_this_variant_this_seed_multigen_analysis,
+                                        fw_this_variant_cohort_analysis,
+                                        fw_variant_analysis
+                                    ]
+                                    for data in data_fws:
+                                        self.add_dependency(
+                                            data,
+                                            fw_this_variant_sim_data_compression,
+                                            fw_validation_data_compress,
+                                            fw_this_variant_this_gen_this_sim_compression
+                                        )
+                            
+                            if self.user_params["build_causality_network"]:
+                                build_causality_network = False # only do it once per model run!
+                                fw_this_variant_this_gen_this_sim_causality_network = self.add_firework(
+                                    BuildCausalityNetworkTask(
+                                        input_results_directory=CELL_SIM_OUT_DIRECTORY,
+                                        input_sim_data=os.path.join(
+                                            VARIANT_SIM_DATA_DIRECTORY,
+                                            constants.SERIALIZED_SIM_DATA_MODIFIED
+                                        ),
+                                        output_dynamics_directory=CELL_SERIES_OUT_DIRECTORY,
+                                        metadata=md_single
+                                    ),
+                                    name=f"CausalityNetwork_variant_{i:03d}_seed_{j:03d}_gen_{k:03d}_daughter_{l:03d}",
+                                    cpus=self.user_params["analysis_cpus"],
+                                    priority=2,
+                                    indent=3
+                                )
+
+                                if self.user_params["COMPRESS_OUTPUT"]:
+                                    self.add_dependency(
+                                        fw_this_variant_this_gen_this_sim_causality_network,
+                                        fw_this_variant_sim_data_compression,
+                                        fw_this_variant_this_gen_this_sim_compression
+                                    )
+
         pass  # Implementation goes here
+
+    def add_comparison_analysis(
+        self,
+        reference_sim_dir: str,
+        reference_variant_analysis: Firework
+    ) -> None:
+        """
+        Add an AnalysisComparisonTask that compares the WCM workflow results to a reference simulation.
+        """
+        log_info("Building comparison analysis task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
+        if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
+            plot_out_dir = os.path.join(
+                self.user_params["indiv_out_directory"],
+                constants.COMPARISON_PLOTOUT_DIR
+            )
+            self.add_firework(
+                AnalysisComparisonTask(
+                    reference_sim_dir=reference_sim_dir,
+                    input_sim_dir=self.user_params["indiv_out_directory"],
+                    output_plots_directory=plot_out_dir,
+                    plot=self.user_params["PLOTS"],
+                    cpus=self.user_params["analysis_cpus"],
+                    metadata=self.metadata
+                ),
+                name="ComparisonAnalysis",
+                parents=[reference_variant_analysis, self.fw_variant_analysis],
+                cpus=self.user_params["analysis_cpus"],
+                priority=4
+            )
+    
+    def convert_to_fireworks_workflow(self) -> Workflow:
+        """
+        Convert the internal representation to a FireWorks Workflow object
+        using the Firetask and dependency information stored in the builder.
+        """
+        return Workflow(self.wf_fws, links_dict=self.wf_links)
+
+
 
     def describe(self) -> None:
         """
@@ -560,18 +1275,38 @@ class WorkflowBuilder:
             log_info(desc)
             log_info("\n------------------------")
     
-    def upload(self) -> None:
-        """
-            Upload the workflow to the FireWorks launchpad.
-        """
-        #lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
-        #lpad.add_wf(self.convert_to_fireworks_workflow())
-        log_info("Workflow uploaded to launchpad.", verbose_flag=True)
-        self.lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
-    
     def convert_to_fireworks_workflow(self) -> Workflow:
         """
             Convert the internal representation to a FireWorks Workflow object
             using the Firetask and dependency information stored in the builder.
         """
         return Workflow(self.wf_fws, links_dict=self.wf_links)
+
+def upload(fireworks_workflow, launchpad_file) -> None:
+    """
+        Upload the workflow to the FireWorks launchpad.
+    """
+    lpad = LaunchPad.from_file(launchpad_file)
+    lpad.add_wf(fireworks_workflow)
+    log_info("Workflow uploaded to launchpad.", verbose_flag=True)
+    #self.lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
+
+def build_and_submit(user_params = None):
+    if not user_params:
+        user_params = clean_user_params(get_param_defaults())
+    builder = WorkflowBuilder(user_params=user_params)
+
+    if user_params["OPERONS"] == 'both':
+        builder.build_workflow(operons='off')
+        sim_dir1 = builder.user_params["indiv_out_directory"]
+        variant_analysis1 = builder.fw_variant_analysis
+        builder.build_workflow(operons='on')
+        builder.add_comparison_analysis(reference_sim_dir=sim_dir1, reference_variant_analysis=variant_analysis1)
+    else:
+        builder.build_workflow(operons=user_params["OPERONS"])
+    
+    wf = builder.convert_to_fireworks_workflow()
+    upload(wf, user_params["LAUNCHPAD_FILE"])
+
+if __name__ == "__main__":
+    build_and_submit()
