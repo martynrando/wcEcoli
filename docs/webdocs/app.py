@@ -250,7 +250,7 @@ def workflow_status_page():
             "progress": f"{completed_count} / {total_count} FWs completed"
             "status": status,
             "details": wf_builder.get_details()
-        }))
+        })
     workflow_statuses.sort(key=lambda x: x["workflow_id"])
     return render_template(
         "running.html",
