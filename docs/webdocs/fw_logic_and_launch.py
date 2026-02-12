@@ -407,6 +407,8 @@ def clean_user_params(raw):
 
 
 def prep_user_params(user_params):
+    user_params["FIRST_VARIANT_INDEX"] = int(user_params["FIRST_VARIANT_INDEX"])
+    user_params["LAST_VARIANT_INDEX"] = int(user_params["LAST_VARIANT_INDEX"])
     user_params["variants_to_run"] = list(range(
         user_params["FIRST_VARIANT_INDEX"],
         user_params["LAST_VARIANT_INDEX"] + 1
