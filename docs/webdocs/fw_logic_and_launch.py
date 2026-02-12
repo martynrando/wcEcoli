@@ -463,6 +463,10 @@ class WorkflowBuilder:
         self.operons = ''
         self.name_suffix = ''
         self.user_params = user_params
+        self.user_params["indiv_out_directory"] = filepath.makedirs(
+            user_params["out_dir"], 
+            f"{user_params["submission_time"]}__{user_params["sim_description"]}{self.name_suffix}"
+        )
 
         log_info(f"Initialized WorkflowBuilder with user_params:", verbose_flag=self.user_params["VERBOSE_QUEUE"], message_level=-1)
         for key, value in self.user_params.items():
