@@ -778,7 +778,7 @@ class WorkflowBuilder:
                     self.KB_DIRECTORY,
                     constants.SERIALIZED_RAW_DATA
                 ),
-                output=os.path.join(
+                output_data=os.path.join(
                     self.KB_DIRECTORY,
                     constants.SERIALIZED_VALIDATION_DATA
                 )
@@ -913,10 +913,11 @@ class WorkflowBuilder:
                         self.KB_DIRECTORY,
                         constants.SERIALIZED_SIM_DATA_FILENAME
                     ),
-                    output_data=os.path.join(
+                    output_sim_data=os.path.join(
                         VARIANT_SIM_DATA_DIRECTORY,
                         constants.SERIALIZED_SIM_DATA_MODIFIED
-                    )
+                    ),
+                    variant_metadata_directory=VARIANT_METADATA_DIRECTORY
                 ),
                 name=f"VariantSimData_variant_{i:03d}",
                 parents=[fw_calculate_sim_data, fw_init_validation_data],
@@ -945,7 +946,7 @@ class WorkflowBuilder:
             if self.user_params["RUN_AGGREGATE_ANALYSIS"]:
                 fw_this_variant_cohort_analysis = self.add_firework(
                     AnalysisCohortTask(
-                        input_directory=VARIANT_DIRECTORY,
+                        input_variant_directory=VARIANT_DIRECTORY,
                         input_sim_data=os.path.join(
                             VARIANT_SIM_DATA_DIRECTORY,
                             constants.SERIALIZED_SIM_DATA_MODIFIED
@@ -968,7 +969,7 @@ class WorkflowBuilder:
                 if self.user_params["EXPORT_ECOCYC_FILES"]:
                     fw_this_variant_ecocyc_analysis = self.add_firework(
                         AnalysisCohortTask(
-                            input_directory=VARIANT_DIRECTORY,
+                            input_variant_directory=VARIANT_DIRECTORY,
                             input_sim_data=os.path.join(
                                 VARIANT_SIM_DATA_DIRECTORY,
                                 constants.SERIALIZED_SIM_DATA_MODIFIED
