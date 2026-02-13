@@ -5,7 +5,7 @@ import markdown
 import os
 import time
 from fw_logic_and_launch import WF_RULES, build_and_submit
-from wholecell.fireworks import initialize
+import wholecell.utils.filepath as fp
 
 app = Flask(
     __name__,
@@ -37,8 +37,50 @@ def render_markdown(filename):
     return Markup("<p>Content not found.</p>")
 
 # Initialising the launchpad file
-os.environ["USER"] = "flask_app"
-initialize.main()
+home = os.environ["HOME"]
+user = "flask_app"
+print("Entering launchpad info")
+logdir_launchpad = os.path.join(home, "fw", "logs", "launchpad")
+logdir_qadapter = os.path.join(home, "fw", "logs", "qadapter")
+db_host = "172.17.0.1"
+db_port = "27017"
+db_name = user
+db_username = ""
+db_password = ""
+wcecoli_path = fp.ROOT_PATH
+template_my_launchpad = os.path.join(
+    wcecoli_path,
+    "wholecell", "fireworks", "templates", "my_launchpad.yaml"
+)
+my_launchpad = os.path.join(wcecoli_path,"my_launchpad.yaml")
+fp.makedirs(logdir_launchpad)
+fp.makedirs(logdir_qadapter)
+with open(template_my_launchpad, "r") as f:
+	t = f.read()
+my_launchpad_text = t.format(
+    LOGDIR_LAUNCHPAD=logdir_launchpad,
+    DB_HOST=db_host,
+    DB_NAME=db_name,
+    DB_USERNAME=db_username or 'null',
+    DB_PASSWORD=db_password or 'null',
+    DB_PORT=db_port
+)
+with open(my_launchpad, "w") as f:
+	f.write(my_launchpad_text)
+template_my_qadapter = os.path.join(wcecoli_path, "wholecell", "fireworks", "templates", "my_qadapter.yaml")
+my_qadapter = os.path.join(wcecoli_path, "my_qadapter.yaml")
+with open(template_my_qadapter, "r") as f:
+    t = f.read()
+my_qadapter_text = t.format(
+    LOGDIR_QADAPTER=logdir_qadapter,
+    LAUNCHPAD_PATH=my_launchpad,
+    WCECOLI_PATH=wcecoli_path,
+    )
+with open(my_qadapter, "w") as f:
+    f.write(my_qadapter_text)
+print("")
+print("Created {} with the information provided.".format(my_launchpad))
+print("Created {} with the information provided.".format(my_qadapter))
 
 # Home page
 @app.route("/")
@@ -183,6 +225,7 @@ def control_page():
             "allowed_set": allowed_set,
             "allowed": allowed,
         })
+    WF_RULES["LAUNCHPAD_FILE"]["default"] = my_launchpad
 
     return render_template("control_page.html", params=params)
 
