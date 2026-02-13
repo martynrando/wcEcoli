@@ -6,6 +6,7 @@ import os
 import time
 from fw_logic_and_launch import WF_RULES, build_and_submit
 import wholecell.utils.filepath as fp
+from fireworks import LaunchPad
 
 app = Flask(
     __name__,
@@ -81,6 +82,9 @@ with open(my_qadapter, "w") as f:
 print("")
 print("Created {} with the information provided.".format(my_launchpad))
 print("Created {} with the information provided.".format(my_qadapter))
+lpad = LaunchPad.from_file(my_launchpad)
+lpad.reset()
+
 
 # Home page
 @app.route("/")

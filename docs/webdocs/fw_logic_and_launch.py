@@ -1305,8 +1305,8 @@ def upload(fireworks_workflow, launchpad_file) -> None:
     """
     lpad = LaunchPad.from_file(launchpad_file)
     lpad.add_wf(fireworks_workflow)
-    log_info("Workflow uploaded to launchpad.", verbose_flag=True)
-    
+    log_info("\n--- Workflow uploaded to launchpad.", verbose_flag=True)
+
 
 def build_and_submit(user_params = None):
     if not user_params:
