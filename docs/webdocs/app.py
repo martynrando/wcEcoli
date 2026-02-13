@@ -37,6 +37,7 @@ def render_markdown(filename):
     return Markup("<p>Content not found.</p>")
 
 # Initialising the launchpad file
+os.environ["USER"] = "flask_app"
 initialize.main()
 
 # Home page
