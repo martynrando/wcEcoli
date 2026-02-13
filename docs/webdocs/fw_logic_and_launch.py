@@ -671,7 +671,7 @@ class WorkflowBuilder:
             InitRawDataTask(
                 operons = self.operons,
                 new_genes = self.user_params["NEW_GENES"],
-                protein_degradation_combos = self.user_params["PDR_COMBOS"],
+                protein_degradation_combo = self.user_params["PDR_COMBOS"],
                 remove_rrna_operons = self.user_params["REMOVE_RRNA_OPERONS"],
                 remove_rrff = self.user_params["REMOVE_RRFF"],
                 stable_rrna = self.user_params["STABLE_RRNA"],
