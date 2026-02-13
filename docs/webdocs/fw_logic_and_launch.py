@@ -1279,7 +1279,7 @@ class WorkflowBuilder:
         Convert the internal representation to a FireWorks Workflow object
         using the Firetask and dependency information stored in the builder.
         """
-        return Workflow(self.wf_fws, links_dict=self.wf_links)
+        return Workflow(self.fireworks, links_dict=self.dependencies)
 
 
 
