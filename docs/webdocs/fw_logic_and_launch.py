@@ -407,6 +407,16 @@ def clean_user_params(raw):
 
 
 def prep_user_params(user_params):
+    user_params["SEED"] = int(user_params["SEED"])
+    user_params["N_INIT_SIMS"] = int(user_params["N_INIT_SIMS"])
+    user_params["N_GENS"] = int(user_params["N_GENS"])
+    user_params["WC_LENGTHSEC"] = int(user_params["WC_LENGTHSEC"])
+    user_params["LOG_TO_DISK_EVERY"] = int(user_params["LOG_TO_DISK_EVERY"])
+    user_params["TIMESTEP_MAX"] = float(user_params["TIMESTEP_MAX"])
+    user_params["TIMESTEP_SAFETY_FRAC"] = float(user_params["TIMESTEP_SAFETY_FRAC"])
+    user_params["TIMESTEP_UPDATE_FREQ"] = float(user_params["TIMESTEP_UPDATE_FREQ"])
+
+
     user_params["FIRST_VARIANT_INDEX"] = int(user_params["FIRST_VARIANT_INDEX"])
     user_params["LAST_VARIANT_INDEX"] = int(user_params["LAST_VARIANT_INDEX"])
     user_params["variants_to_run"] = list(range(
@@ -447,14 +457,14 @@ def log_info(
     """
     if verbose_flag:
         if message_level == 0:
-            print(f"{' ' * indent}{message}")
+            print(f"{' ' * indent}{message}",  file=sys.stdout)
         elif message_level == 1:
-            print(f"{' ' * indent}[Warning {message_level}] {message}")
+            print(f"{' ' * indent}[Warning {message_level}] {message}",  file=sys.stdout)
     if message_level > 1:
-        print(f"{' ' * indent}[Error {message_level}] {message}")
-    if False:
+        print(f"{' ' * indent}[Error {message_level}] {message}",  file=sys.stdout)
+    if True:
         # For when we want to print absolutely every message regardless of verbosity
-        print(f"{'>' * indent}{message}")
+        print(f"{'>' * indent}{message}",  file=sys.stdout)
 
 class WorkflowBuilder:
     def __init__(self, user_params: Dict) -> None:
