@@ -746,7 +746,7 @@ class WorkflowBuilder:
         fw_init_raw_validation_data = self.add_firework(
             InitRawValidationDataTask(
                 output=os.path.join(
-                    self.kb_directory,
+                    self.KB_DIRECTORY,
                     constants.SERIALIZED_RAW_VALIDATION_DATA
                 )
             ),
@@ -1073,7 +1073,7 @@ class WorkflowBuilder:
                                 ),
                                 output_directory=CELL_SIM_OUT_DIRECTORY,
                                 timeline = self.user_params["TIMELINE"],
-                                length_sec = self.user_params["WC_LENGTH_SEC"],
+                                length_sec = self.user_params["WC_LENGTHSEC"],
                                 timestep_safety_frac = self.user_params["TIMESTEP_SAFETY_FRAC"],
                                 timestep_max = self.user_params["TIMESTEP_MAX"],
                                 timestep_update_freq = self.user_params["TIMESTEP_UPDATE_FREQ"],
@@ -1217,8 +1217,8 @@ class WorkflowBuilder:
                                             fw_this_variant_this_gen_this_sim_compression
                                         )
                             
-                            if self.user_params["build_causality_network"]:
-                                build_causality_network = False # only do it once per model run!
+                            if self.user_params["BUILD_CAUSALITY_NETWORK"]:
+                                self.user_params["BUILD_CAUSALITY_NETWORK"] = False # only do it once per model run!
                                 fw_this_variant_this_gen_this_sim_causality_network = self.add_firework(
                                     BuildCausalityNetworkTask(
                                         input_results_directory=CELL_SIM_OUT_DIRECTORY,
