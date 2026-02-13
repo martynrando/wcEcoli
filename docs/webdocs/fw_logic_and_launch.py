@@ -548,8 +548,8 @@ class WorkflowBuilder:
         log_info(f"\n--- Building WCM workflow with operons={operons} ---", verbose_flag=True)
         
         self.make_output_directories()
-        self.write_metadata()
-        return self.build_wcm_firetasks()
+        #self.write_metadata()
+        #return self.build_wcm_firetasks()
     
     def make_output_directories(self, 
             SUBMISSION_TIME = filepath.timestamp()
@@ -1322,10 +1322,10 @@ def build_and_submit(user_params = None):
         sim_dir1 = builder.user_params["indiv_out_directory"]
         variant_analysis1 = builder.fw_variant_analysis
         builder.build_workflow(operons='on')
-        builder.add_comparison_analysis(reference_sim_dir=sim_dir1, reference_variant_analysis=variant_analysis1)
+        #builder.add_comparison_analysis(reference_sim_dir=sim_dir1, reference_variant_analysis=variant_analysis1)
     else:
         builder.build_workflow(operons=user_params["OPERONS"])
-    
+    return builder.user_params
     wf = builder.convert_to_fireworks_workflow()
     upload(wf, user_params["LAUNCHPAD_FILE"])
 

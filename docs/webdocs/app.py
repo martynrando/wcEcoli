@@ -207,7 +207,7 @@ def submit_workflow():
         raw_value = request.form.get(name)
         if raw_value is not None:
             user_params[name] = raw_value
-    build_and_submit(user_params=user_params)
+    user_params = build_and_submit(user_params=user_params)
     return f"Submitted parameters: {user_params}"
 
 
