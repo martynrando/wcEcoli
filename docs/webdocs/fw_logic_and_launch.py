@@ -1282,7 +1282,6 @@ class WorkflowBuilder:
         return Workflow(self.fireworks, links_dict=self.dependencies)
 
 
-
     def describe(self) -> None:
         """
             Print a description of the workflow.
@@ -1299,13 +1298,6 @@ class WorkflowBuilder:
             desc = "\n".join(f"  {key}: {value}" for key, value in fw.describe().items())
             log_info(desc)
             log_info("\n------------------------")
-    
-    def convert_to_fireworks_workflow(self) -> Workflow:
-        """
-            Convert the internal representation to a FireWorks Workflow object
-            using the Firetask and dependency information stored in the builder.
-        """
-        return Workflow(self.wf_fws, links_dict=self.wf_links)
 
 def upload(fireworks_workflow, launchpad_file) -> None:
     """
