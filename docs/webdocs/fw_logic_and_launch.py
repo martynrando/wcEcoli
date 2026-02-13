@@ -457,14 +457,14 @@ def log_info(
     """
     if verbose_flag:
         if message_level == 0:
-            print(f"{' ' * indent}{message}",  file=sys.stdout)
+            print(f"{' ' * indent}{message}",  file=sys.stdout, flush=True)
         elif message_level == 1:
-            print(f"{' ' * indent}[Warning {message_level}] {message}",  file=sys.stdout)
+            print(f"{' ' * indent}[Warning {message_level}] {message}",  file=sys.stdout, flush=True)
     if message_level > 1:
-        print(f"{' ' * indent}[Error {message_level}] {message}",  file=sys.stdout)
+        print(f"{' ' * indent}[Error {message_level}] {message}",  file=sys.stdout, flush=True)
     if True:
         # For when we want to print absolutely every message regardless of verbosity
-        print(f"{'>' * indent}{message}",  file=sys.stdout)
+        print(f"{'>' * indent}{message}",  file=sys.stdout, flush=True)
 
 class WorkflowBuilder:
     def __init__(self, user_params: Dict) -> None:
