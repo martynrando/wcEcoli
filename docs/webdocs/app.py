@@ -5,6 +5,7 @@ import markdown
 import os
 import time
 from fw_logic_and_launch import WF_RULES, build_and_submit
+from wholecell.fireworks import initialize
 
 app = Flask(
     __name__,
@@ -34,6 +35,9 @@ def render_markdown(filename):
             text = f.read()
         return Markup(markdown.markdown(text))
     return Markup("<p>Content not found.</p>")
+
+# Initialising the launchpad file
+initialize.main()
 
 # Home page
 @app.route("/")

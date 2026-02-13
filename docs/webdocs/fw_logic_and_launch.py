@@ -333,9 +333,9 @@ WF_RULES = {
     # -------------------------
     "LAUNCHPAD_FILE": {
         "type": str,
-        "default": "my_launchpad.yaml",
+        "default": "wholecell/fireworks/templates/my_launchpad.yaml",
         "maxlen": 200,
-        "removed_chars": r"[^a-zA-Z0-9_\./-]",
+        "removed_chars": r"[^a-zA-Z0-9_\.-]",
         "description": "Location of FireWorks launchpad config.",
     },
     "VERBOSE_QUEUE": {
@@ -1306,7 +1306,7 @@ def upload(fireworks_workflow, launchpad_file) -> None:
     lpad = LaunchPad.from_file(launchpad_file)
     lpad.add_wf(fireworks_workflow)
     log_info("Workflow uploaded to launchpad.", verbose_flag=True)
-    #self.lpad = LaunchPad.from_file(self.user_params["LAUNCHPAD_FILE"])
+    
 
 def build_and_submit(user_params = None):
     if not user_params:
