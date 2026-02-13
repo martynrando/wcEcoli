@@ -644,7 +644,7 @@ class WorkflowBuilder:
             self.metadata
         )
         log_info("Wrote workflow metadata.", verbose_flag=self.user_params["VERBOSE_QUEUE"])
-        git_diff = filepath.run_cmd_line("git diff HEAD", trim=False)
+        git_diff = None # filepath.run_cmd_line("git diff HEAD", trim=False)
         if git_diff:
             filepath.write_text_file(
                 os.path.join(METADATA_DIRECTORY, "git_diff.txt"),
