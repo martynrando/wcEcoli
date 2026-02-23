@@ -83,7 +83,7 @@ print("")
 print("Created {} with the information provided.".format(my_launchpad))
 print("Created {} with the information provided.".format(my_qadapter))
 lpad = LaunchPad.from_file(my_launchpad)
-
+lpad.reset("", require_password=False)  # Clear existing data for a clean slate
 
 
 # Home page
