@@ -302,7 +302,7 @@ def workflow_status_page():
             "notes": wf_notes,
             "spec": wf_spec,
             "fireworks": fws,
-            "progress": f"{completed_count} / {total_count} FWs completed"
+            "progress": (completed_count / total_count * 100) if total_count > 0 else 0
         })
     workflow_statuses.sort(key=lambda x: x["workflow_id"])
     return render_template(

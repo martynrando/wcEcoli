@@ -37,11 +37,11 @@ including their current state and progress through computational steps.
     <!-- Progress bar -->
     <div class="progress-bar">
       <div class="progress-fill"
-           style="width: {{ (wf.progress * 100) | round(1) }}%">
+           style="width: {{ (wf.progress) | round(1) }}%">
       </div>
     </div>
     <div class="progress-text">
-      {{ (wf.progress * 100) | round(1) }}% complete
+      {{ (wf.progress) | round(1) }}% complete
     </div>
 
     <!-- Workflow steps -->
