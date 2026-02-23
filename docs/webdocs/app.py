@@ -229,7 +229,7 @@ def control_page():
             "allowed_set": allowed_set,
             "allowed": allowed,
         })
-    WF_RULES["LAUNCHPAD_FILE"]["default"] = my_launchpad
+    WF_RULES["LAUNCHPAD_FILE"]["default"] = "my_launchpad.yaml"
 
     return render_template("control_page.html", params=params)
 
