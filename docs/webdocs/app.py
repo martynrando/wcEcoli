@@ -48,7 +48,7 @@ db_port = "27017"
 db_name = user
 db_username = ""
 db_password = ""
-wcecoli_path = fp.ROOT_PATH
+wcecoli_path = '/user'
 template_my_launchpad = os.path.join(
     wcecoli_path,
     "wholecell", "fireworks", "templates", "my_launchpad.yaml"
