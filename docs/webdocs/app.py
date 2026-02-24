@@ -39,7 +39,7 @@ def render_markdown(filename):
 
 # Initialising the launchpad file
 home = os.environ["HOME"]
-user = "flask_app"
+user = "wcm_user"
 print("Entering launchpad info")
 logdir_launchpad = os.path.join(home, "fw", "logs", "launchpad")
 logdir_qadapter = os.path.join(home, "fw", "logs", "qadapter")
@@ -201,6 +201,7 @@ def control_page():
     Render the workflow control form dynamically from WF_RULES.
     """
     params = []
+    WF_RULES["LAUNCHPAD_FILE"]["default"] = "my_launchpad.yaml"
 
     for name, rule in WF_RULES.items():
         param_type = rule.get("type", None)
@@ -229,7 +230,6 @@ def control_page():
             "allowed_set": allowed_set,
             "allowed": allowed,
         })
-    WF_RULES["LAUNCHPAD_FILE"]["default"] = "my_launchpad.yaml"
 
     return render_template("control_page.html", params=params)
 
@@ -282,19 +282,19 @@ def workflow_status_page():
         total_count = 0
         completed_count = 0
 
-        fw_docs = fw_collection.find({"wf_id": wf_id}).sort("created_at", 1)
+        fw_docs = fw_collection.find({"wf_id": wf_id}).sort("created_on", 1)
         for fw_doc in fw_docs:
-            if fw_doc.get("status") == "COMPLETED":
+            if fw_doc.get("state") == "COMPLETED":
                 completed_count += 1
             total_count += 1
             fws.append({
                 "fw_id": str(fw_doc["_id"]),
                 "name": fw_doc.get("name", f"FW {fw_doc['_id']}"),
-                "status": fw_doc.get("status", "UNKNOWN"),
                 "state": fw_doc.get("state", {}),
                 "host": fw_doc.get("host", "N/A"),
-                "created_at": fw_doc.get("created_at"),
-                "updated_at": fw_doc.get("updated_at"),
+                "priority": fw_doc.get("_priority", "N/A"),
+                "created_on": fw_doc.get("created_on"),
+                "updated_on": fw_doc.get("updated_on"),
             })
         workflow_statuses.append({
             "workflow_id": str(wf_doc["_id"]),

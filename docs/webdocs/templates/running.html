@@ -50,18 +50,19 @@ including their current state and progress through computational steps.
 
       <div class="workflow-step state-{{ fw.state|lower }}">
 
-        <div class="step-icon">
+        <div class="step-icon" style="float:left;">
+          {{ fw.state }}
           {% if fw.state == "COMPLETED" %}✓
           {% elif fw.state == "RUNNING" %}▶
           {% elif fw.state == "FIZZLED" %}✖
           {% else %}○{% endif %}
         </div>
 
-        <div class="step-details">
+        <div class="step-details" style="float:left;">
           <div class="step-name">{{ fw.name }}</div>
 
-          {% if fw.host %}
-          <div class="step-meta">
+          {% if fw.host != "N/A" %}
+          <div class="step-meta" style="float:left;">
             Running on {{ fw.host }}
           </div>
           {% endif %}

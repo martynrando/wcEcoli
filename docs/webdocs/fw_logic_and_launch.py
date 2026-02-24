@@ -406,7 +406,7 @@ def clean_user_params(raw):
     return cleaned_params
 
 
-def prep_user_params(user_params):
+def prep_user_params(user_params, file_root_path: str = filepath.ROOT_PATH):
     user_params["SEED"] = int(user_params["SEED"])
     user_params["N_INIT_SIMS"] = int(user_params["N_INIT_SIMS"])
     user_params["N_GENS"] = int(user_params["N_GENS"])
@@ -429,8 +429,9 @@ def prep_user_params(user_params):
     if not user_params["RUN_AGGREGATE_ANALYSIS"]:
         user_params["COMPRESS_OUTPUT"] = False
     
-    user_params["out_dir"] = filepath.makedirs(filepath.ROOT_PATH, "out")
-    user_params["cached_dir"] = os.path.join(filepath.ROOT_PATH, "cached")
+    user_params["file_root_path"] = file_root_path
+    user_params["out_dir"] = filepath.makedirs(file_root_path, "out")
+    user_params["cached_dir"] = os.path.join(file_root_path, "cached")
     user_params["submission_time"] = filepath.timestamp()
     if "ANALYZE_FAST" in user_params:
         if user_params["ANALYZE_FAST"]:
@@ -874,7 +875,7 @@ class WorkflowBuilder:
             log_info("Building EcoCyc export task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
             fw_ecocyc_export = self.add_firework(
                 ScriptTask(
-                    script=f"bash {os.path.join(filepath.ROOT_PATH, 'runscripts', 'ecocyc', 'export_ecocyc_files.sh')} " + self.user_params["indiv_out_directory"]
+                    script=f"bash {os.path.join(self.user_params['file_root_path'], 'runscripts', 'ecocyc', 'export_ecocyc_files.sh')} " + self.user_params["indiv_out_directory"]
                 ),
                 name="EcoCycExport"
             )
@@ -1311,7 +1312,7 @@ def upload(fireworks_workflow, launchpad_file) -> None:
 def build_and_submit(user_params = None):
     if not user_params:
         user_params = clean_user_params(get_param_defaults())
-    user_params = prep_user_params(user_params=user_params)
+    user_params = prep_user_params(user_params=user_params, file_root_path='/user') # set file root path to /user/
     builder = WorkflowBuilder(user_params=user_params)
 
     if user_params["OPERONS"] == 'both':
