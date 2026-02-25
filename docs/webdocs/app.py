@@ -317,6 +317,7 @@ dash_data = AnalysisInteractive().parse_data_structure(
     path = '/user/out/20260225.021222__testing!'# simulation output path
 )
 print(os.listdir('/user/out/20260225.021222__testing!'))
+print(os.listdir('/user/out'))
 dash_app = create_app(
     data_structure=dash_data,
     app=dash.Dash(__name__, server=app, url_base_pathname='/analysis/')

@@ -17,6 +17,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import sys
 import re
 from typing import Dict, List, Optional, Set, Tuple, Union
 import webbrowser
@@ -452,6 +453,9 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 				variant_dirs = [v[0] for v in self.list_variant_dirs(sim_path)]
 				if len(variant_dirs):
 					experiments[sim_path] = {d: {} for d in variant_dirs}
+		print('Running analysis on the following simulation directories:',  file=sys.stdout, flush=True)
+		for sim_path in experiments:
+			print(f'  {sim_path}',  file=sys.stdout, flush=True')
 
 		# Find all possible simulations to select
 		# TODO: more efficient or cleaner way of doing this
