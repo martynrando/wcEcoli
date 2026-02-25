@@ -431,7 +431,7 @@ def prep_user_params(user_params, file_root_path: str = filepath.ROOT_PATH):
     
     user_params["file_root_path"] = file_root_path
     user_params["out_dir"] = filepath.makedirs(file_root_path, "out")
-    user_params["cached_dir"] = os.path.join(file_root_path, "cached")
+    user_params["cached_dir"] = os.path.join(file_root_path, "cached") if os.path.isdir(os.path.join(file_root_path, "cached")) else filepath.makedirs(file_root_path, "cached")
     user_params["submission_time"] = filepath.timestamp()
     if "ANALYZE_FAST" in user_params:
         if user_params["ANALYZE_FAST"]:

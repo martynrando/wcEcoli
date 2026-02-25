@@ -99,7 +99,7 @@ def load_listener(selection: str) -> Tuple[np.ndarray, List[str]]:
 
 	return data, labels
 
-def create_app(data_structure: Dict) -> dash.Dash:
+def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	"""
 	Create the dash app to serve the webpage and content.
 
@@ -276,7 +276,7 @@ def create_app(data_structure: Dict) -> dash.Dash:
 		return div, input_value
 
 	# Create webpage layout
-	app = dash.Dash()
+	# app = dash.Dash()
 	input_div, input_value = data_selection(app, data_structure, DATA_SELECTION_ID, defaults={'Main', 'time'})
 	app.layout = html.Div(children=[
 		html.H1('Whole-cell simulation explorer'),
@@ -501,8 +501,8 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		app = create_app(data_structure)
 
 		# Serve interactive page (may take a second to load, reload if necessary)
-		webbrowser.open_new(f'http://127.0.0.1:{PORT}/')
-		app.run_server(host="0.0.0.0", port=PORT)
+		#webbrowser.open_new(f'http://127.0.0.1:{PORT}/')
+		#app.run_server(host="0.0.0.0", port=PORT)
 
 
 if __name__ == '__main__':

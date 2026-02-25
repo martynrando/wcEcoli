@@ -7,6 +7,8 @@ import time
 from fw_logic_and_launch import WF_RULES, build_and_submit
 import wholecell.utils.filepath as fp
 from fireworks import LaunchPad
+from runscripts.manual.analysis_interactive import create_app, AnalysisInteractive
+import dash
 
 app = Flask(
     __name__,
@@ -18,7 +20,7 @@ mongoclient = MongoClient("mongodb://172.17.0.1:27017/")
 webdocs_db = mongoclient["wcecoli_webdocs"]
 comments_collection = webdocs_db["comments"]
 # fireworks collection
-fw_db = mongoclient["root"]
+fw_db = mongoclient["wcm_user"]
 fw_collection = fw_db["fireworks"]
 wf_collection = fw_db["workflows"]
 launch_collection = fw_db["launches"]
@@ -311,8 +313,13 @@ def workflow_status_page():
         workflows=workflow_statuses
     )
 
-
-
+dash_data = AnalysisInteractive.parse_data_structure(
+    path = '/user/out'# simulation output path
+)
+dash_app = create_app(
+    data_structure=dash_data,
+    app=dash.Dash(__name__, server=app, url_base_pathname='/analysis/')
+)
 if __name__ == "__main__":
     # Run Flask app
     app.run(host="0.0.0.0", port=5000, debug=True)
