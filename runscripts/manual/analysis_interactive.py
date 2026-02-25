@@ -455,7 +455,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 					experiments[sim_path] = {d: {} for d in variant_dirs}
 		print('Running analysis on the following simulation directories:',  file=sys.stdout, flush=True)
 		for sim_path in experiments:
-			print(f'  {sim_path}',  file=sys.stdout, flush=True')
+			print(f'  {sim_path}',  file=sys.stdout, flush=True)
 
 		# Find all possible simulations to select
 		# TODO: more efficient or cleaner way of doing this
