@@ -591,12 +591,12 @@ class WorkflowBuilder:
                 for k in range(self.user_params["N_GENS"]):
                     GEN_DIRECTORY = filepath.makedirs(
                         SEED_DIRECTORY,
-                        f"gen_{k+1:03d}"
+                        f"gen_{k:03d}"
                     )
                     for l in range(2**k) if not self.user_params["SINGLE_DAUGHTERS"] else range(1):
                         CELL_DIRECTORY = filepath.makedirs(
                             GEN_DIRECTORY,
-                            f"daughter_{l+1:03d}"
+                            f"daughter_{l:03d}"
                         )
                         number_of_individual_cells += 1
         log_info(f"Created output directories for {number_of_individual_cells} individual cells.")
