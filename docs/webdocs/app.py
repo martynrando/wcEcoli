@@ -314,7 +314,7 @@ def workflow_status_page():
     )
 
 dash_data = AnalysisInteractive().parse_data_structure(
-    path = '/user/out/20260225.02122__testing!'# simulation output path
+    path = '/user/out/20260225.021222__testing!'# simulation output path
 )
 dash_app = create_app(
     data_structure=dash_data,
