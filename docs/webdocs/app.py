@@ -312,6 +312,7 @@ def workflow_status_page():
     return render_template(
         "running.html",
         workflows=workflow_statuses,
+        title="status",
         page_id="status"
     )
 
