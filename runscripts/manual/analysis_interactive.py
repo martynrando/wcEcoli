@@ -479,15 +479,16 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 									if daughter_regex.match(daughter):
 										listener_dict = daughter_dict.get(daughter, {})
 										sim_out_dir = os.path.join(gen_dir, daughter, 'simOut')
-										for listener in os.listdir(sim_out_dir):
-											column_dict = listener_dict.get(listener, {})
-											listener_dir = os.path.join(sim_out_dir, listener)
-											if os.path.isdir(listener_dir):
-												for column in os.listdir(listener_dir):
-													if '.' not in column:  # TODO: handle .cPickle columns
-														column_dict[column] = None
-														found_listeners = True
-												listener_dict[listener] = column_dict
+										if os.path.isdir(sim_out_dir):
+											for listener in os.listdir(sim_out_dir):
+												column_dict = listener_dict.get(listener, {})
+												listener_dir = os.path.join(sim_out_dir, listener)
+												if os.path.isdir(listener_dir):
+													for column in os.listdir(listener_dir):
+														if '.' not in column:  # TODO: handle .cPickle columns
+															column_dict[column] = None
+															found_listeners = True
+													listener_dict[listener] = column_dict
 										daughter_dict[daughter] = listener_dict
 								gen_dict[gen] = daughter_dict
 						seed_dict[seed] = gen_dict

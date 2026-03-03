@@ -266,7 +266,7 @@ def submit_workflow():
             user_params[name] = rule["default"]
         user_params[name] = rule["type"](user_params[name])
     build_and_submit(user_params=user_params)
-    return f"Submitted parameters: {user_params}"
+    return redirect(url_for("status"))
 
 
 @app.route("/status", methods=["GET"])
@@ -311,7 +311,8 @@ def workflow_status_page():
     workflow_statuses.sort(key=lambda x: x["workflow_id"])
     return render_template(
         "running.html",
-        workflows=workflow_statuses
+        workflows=workflow_statuses,
+        page_id="status"
     )
 
 dash_data = AnalysisInteractive().parse_data_structure(
