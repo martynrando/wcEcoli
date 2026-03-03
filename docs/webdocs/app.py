@@ -315,7 +315,7 @@ def workflow_status_page():
     )
 
 dash_data = AnalysisInteractive().parse_data_structure(
-    path = '/user/out/20260225.021222__testing!'# simulation output path
+    path = '/user/out'# simulation output path
 )
 print(os.listdir('/user/out/20260225.021222__testing!'),  file=sys.stdout, flush=True)
 print(os.listdir('/user/out'),  file=sys.stdout, flush=True)

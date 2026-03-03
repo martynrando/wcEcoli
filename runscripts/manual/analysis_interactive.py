@@ -460,13 +460,14 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		# TODO: more efficient or cleaner way of doing this
 		# TODO: only find matches when selected on the page instead of prior
 		found_listeners = False
-		seed_regex = re.compile('[0-9]{6}')
-		generation_regex = re.compile('generation_[0-9]{6}')
-		daughter_regex = re.compile('[0-9]{6}')
+		seed_regex = re.compile('sim_[0-9]+')
+		generation_regex = re.compile('gen_[0-9]+')
+		daughter_regex = re.compile('daughter_[0-9]+')
 		for base, variants in experiments.items():
 			for variant, seed_dict in variants.items():
 				variant_dir = os.path.join(base, variant)
 				for seed in os.listdir(variant_dir):
+					print(seed,  file=sys.stdout, flush=True)
 					if seed_regex.match(seed):
 						gen_dict = seed_dict.get(seed, {})
 						seed_dir = os.path.join(variant_dir, seed)
@@ -490,6 +491,9 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 										daughter_dict[daughter] = listener_dict
 								gen_dict[gen] = daughter_dict
 						seed_dict[seed] = gen_dict
+					else:
+						print(f"invalid seed directory: {seed}",  file=sys.stdout, flush=True)
+						print(f"expected format: {seed_regex.pattern}",  file=sys.stdout, flush=True)
 
 		if len(experiments) == 0 or not found_listeners:
 			raise ValueError(f'Could not find valid simulations in "{path}"'
