@@ -460,9 +460,9 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		# TODO: more efficient or cleaner way of doing this
 		# TODO: only find matches when selected on the page instead of prior
 		found_listeners = False
-		seed_regex = re.compile('sim_[0-9]+')
-		generation_regex = re.compile('gen_[0-9]+')
-		daughter_regex = re.compile('daughter_[0-9]+')
+		seed_regex = re.compile('(sim_)?[0-9]+')
+		generation_regex = re.compile('gen(eration)?_[0-9]+')
+		daughter_regex = re.compile('(daughter_)?[0-9]+')
 		for base, variants in experiments.items():
 			for variant, seed_dict in variants.items():
 				variant_dir = os.path.join(base, variant)
