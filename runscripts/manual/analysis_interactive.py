@@ -480,7 +480,6 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 										listener_dict = daughter_dict.get(daughter, {})
 										sim_out_dir = os.path.join(gen_dir, daughter, 'simOut')
 										if os.path.isdir(sim_out_dir):
-											print(sim_out_dir,  file=sys.stdout, flush=True)
 											for listener in os.listdir(sim_out_dir):
 												column_dict = listener_dict.get(listener, {})
 												listener_dir = os.path.join(sim_out_dir, listener)
@@ -490,9 +489,13 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 															column_dict[column] = None
 															found_listeners = True
 													listener_dict[listener] = column_dict
-										daughter_dict[daughter] = listener_dict
-								gen_dict[gen] = daughter_dict
-						seed_dict[seed] = gen_dict
+											daughter_dict[daughter] = listener_dict
+								if len(daughter_dict) > 0:
+									gen_dict[gen] = daughter_dict
+						if len(gen_dict) > 0:
+							seed_dict[seed] = gen_dict
+				if len(seed_dict) == 0:
+					experiments[base].pop(variant)
 
 		if len(experiments) == 0 or not found_listeners:
 			raise ValueError(f'Could not find valid simulations in "{path}"'
