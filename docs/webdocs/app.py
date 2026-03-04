@@ -199,7 +199,7 @@ def serve_process_pdf(pdf_file):
 
 
 @app.route("/control", methods=["GET"])
-def control_page():
+def control():
     """
     Render the workflow control form dynamically from WF_RULES.
     """
