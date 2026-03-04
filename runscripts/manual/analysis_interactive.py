@@ -494,8 +494,10 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 									gen_dict[gen] = daughter_dict
 						if len(gen_dict) > 0:
 							seed_dict[seed] = gen_dict
-				if len(seed_dict) > 0:
+				if len(seed_dict) == 0:
 					experiments_complete[base].pop(variant)
+					print('Removed variant folder:', file=sys.stdout, flush=True)
+					print(base, file=sys.stdout, flush=True)
 			if len(variants) == 0:
 				experiments_complete.pop(base)
 
