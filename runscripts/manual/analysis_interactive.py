@@ -454,8 +454,6 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 				variant_dirs = [v[0] for v in self.list_variant_dirs(sim_path)]
 				if len(variant_dirs):
 					experiments[sim_path] = {d: {} for d in variant_dirs}
-		print('Running analysis on the following simulation directories:',  file=sys.stdout, flush=True)
-		print(experiments,  file=sys.stdout, flush=True)
 
 		# Find all possible simulations to select
 		# TODO: more efficient or cleaner way of doing this
@@ -498,6 +496,8 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 							seed_dict[seed] = gen_dict
 				if len(seed_dict) > 0:
 					experiments_complete[base].pop(variant)
+			if len(variants) == 0:
+				experiments_complete.pop(base)
 
 		if len(experiments_complete) == 0 or not found_listeners:
 			raise ValueError(f'Could not find valid simulations in "{path}"'
@@ -505,6 +505,8 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 				' is to a top level simulation output directory or directory'
 				' containing one or more simulation output directories.')
 
+		print('Running analysis on the following simulation directories:',  file=sys.stdout, flush=True)
+		print(experiments_complete,  file=sys.stdout, flush=True)
 		return experiments_complete
 
 	def run(self, args: argparse.Namespace) -> None:
