@@ -498,7 +498,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 					experiments_complete[base].pop(variant)
 					print('Removed variant folder:', file=sys.stdout, flush=True)
 					print(base, file=sys.stdout, flush=True)
-			if len(variants) == 0:
+			if len(experiments_complete[base]) == 0:
 				experiments_complete.pop(base)
 
 		if len(experiments_complete) == 0 or not found_listeners:
