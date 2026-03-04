@@ -463,6 +463,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		seed_regex = re.compile('(sim_)?[0-9]+')
 		generation_regex = re.compile('gen(eration)?_[0-9]+')
 		daughter_regex = re.compile('(daughter_)?[0-9]+')
+		experiments_complete = experiments.copy()
 		for base, variants in experiments.items():
 			for variant, seed_dict in variants.items():
 				variant_dir = os.path.join(base, variant)
@@ -494,16 +495,16 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 									gen_dict[gen] = daughter_dict
 						if len(gen_dict) > 0:
 							seed_dict[seed] = gen_dict
-				if len(seed_dict) == 0:
-					experiments[base].pop(variant)
+				if len(seed_dict) > 0:
+					experiments_complete[base].pop(variant)
 
-		if len(experiments) == 0 or not found_listeners:
+		if len(experiments_complete) == 0 or not found_listeners:
 			raise ValueError(f'Could not find valid simulations in "{path}"'
 				' or its immediate subdirectories. Make sure the provided path'
 				' is to a top level simulation output directory or directory'
 				' containing one or more simulation output directories.')
 
-		return experiments
+		return experiments_complete
 
 	def run(self, args: argparse.Namespace) -> None:
 		data_structure = self.parse_data_structure(args.sim_dir)
