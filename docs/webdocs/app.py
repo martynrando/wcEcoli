@@ -270,7 +270,7 @@ def submit_workflow():
 
 
 @app.route("/status", methods=["GET"])
-def workflow_status_page():
+def status():
     """
     Display the status of each running workflow.
     """
