@@ -21,6 +21,7 @@ import sys
 import re
 from typing import Dict, List, Optional, Set, Tuple, Union
 import webbrowser
+import copy
 
 import dash
 import dash_core_components as dcc
@@ -463,7 +464,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		seed_regex = re.compile('(sim_)?[0-9]+')
 		generation_regex = re.compile('gen(eration)?_[0-9]+')
 		daughter_regex = re.compile('(daughter_)?[0-9]+')
-		experiments_complete = experiments.copy()
+		experiments_complete = copy.deepcopy(experiments)
 		for base, variants in experiments.items():
 			for variant, seed_dict in variants.items():
 				variant_dir = os.path.join(base, variant)
