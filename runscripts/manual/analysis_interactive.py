@@ -480,6 +480,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 										listener_dict = daughter_dict.get(daughter, {})
 										sim_out_dir = os.path.join(gen_dir, daughter, 'simOut')
 										if os.path.isdir(sim_out_dir):
+											print(sim_out_dir,  file=sys.stdout, flush=True)
 											for listener in os.listdir(sim_out_dir):
 												column_dict = listener_dict.get(listener, {})
 												listener_dir = os.path.join(sim_out_dir, listener)
@@ -492,9 +493,6 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 										daughter_dict[daughter] = listener_dict
 								gen_dict[gen] = daughter_dict
 						seed_dict[seed] = gen_dict
-					else:
-						print(f"invalid seed directory: {seed}",  file=sys.stdout, flush=True)
-						print(f"expected format: {seed_regex.pattern}",  file=sys.stdout, flush=True)
 
 		if len(experiments) == 0 or not found_listeners:
 			raise ValueError(f'Could not find valid simulations in "{path}"'

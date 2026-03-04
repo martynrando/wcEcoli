@@ -319,8 +319,6 @@ def workflow_status_page():
 dash_data = AnalysisInteractive().parse_data_structure(
     path = '/user/out'# simulation output path
 )
-print(os.listdir('/user/out/20260225.021222__testing!'),  file=sys.stdout, flush=True)
-print(os.listdir('/user/out'),  file=sys.stdout, flush=True)
 dash_app = create_app(
     data_structure=dash_data,
     app=dash.Dash(__name__, server=app, url_base_pathname='/analysis/')
