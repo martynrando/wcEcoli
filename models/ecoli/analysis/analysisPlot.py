@@ -19,6 +19,7 @@ from typing import Any, Tuple
 
 import matplotlib as mp
 from matplotlib import pyplot as plt
+mp.rcParams['font.family'] = 'DejaVu Sans' 
 import numpy as np
 
 from reconstruction.ecoli.simulation_data import SimulationDataEcoli
