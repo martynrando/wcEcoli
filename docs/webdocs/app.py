@@ -279,6 +279,8 @@ def status():
     for wf_doc in wf_collection.find():
         wf_id = wf_doc.get("wf_id")
         wf_name = wf_doc.get("name", f"Workflow {wf_id}")
+        if wf_name == 'unnamed WF':
+            wf_name = f"Workflow {wf_id}"
         wf_spec = wf_doc.get("spec", {})
         wf_notes = wf_doc.get("notes", "")
         fws = []

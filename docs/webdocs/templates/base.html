@@ -7,6 +7,49 @@
 
     <!-- Main Wiki CSS -->
     <link rel="stylesheet" href="{{ url_for('static', filename='css/wiki.css') }}">
+<style>
+    /* -------------------------------------------------------------
+        Progress‑bar styling
+    ------------------------------------------------------------- */
+    progress {
+        /* Give the bar a visible height */
+        height: 24px;
+        width: 100%;                     /* full‑width, adjust as you like */
+        border: 1px solid #bbb;          /* thin outer border */
+        border-radius: 4px;
+        overflow: hidden;                /* clip the inner bar */
+        background-color: #e0e0e0;        /* track colour (light gray) */
+    }
+
+    /* Chrome, Edge, Safari – the coloured part */
+    progress::-webkit-progress-bar {
+        background-color: #e0e0e0;        /* same as track */
+    }
+    progress::-webkit-progress-value {
+        background-color: #4caf50;        /* green fill – change to your brand colour */
+    }
+
+    /* Firefox – the coloured part */
+    progress::-moz-progress-bar {
+        background-color: #4caf50;
+    }
+
+    /* Optional: show the percentage as text inside the bar */
+    .progress-wrapper {
+        position: relative;
+        margin-top: 1rem;
+    }
+    .progress-wrapper span {
+        position: absolute;
+        inset: 0;                         /* fill the container */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: bold;
+        color: #fff;                      /* text colour on the fill */
+        pointer-events: none;             /* let clicks pass through */
+    }
+</style>
 </head>
 
 <body>
