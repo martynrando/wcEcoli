@@ -281,7 +281,11 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	# app = dash.Dash()
 	input_div, input_value = data_selection(app, data_structure, DATA_SELECTION_ID, defaults={'Main', 'time'})
 	app.layout = html.Div(children=[
+		dcc.Store(id='data-store'),  # hidden store for parsed data structure
+		dcc.Location(id='url', refresh=False),  # needed for callbacks to update URL without refreshing page
 		html.H1('Whole-cell simulation explorer'),
+		html.Button('Refresh page', id='refresh-button', n_clicks=0),
+		html.Div(id='main-content', children=[
 		html.Div(children=[
 			html.H2('Plot selection:'),
 			dcc.Dropdown(
@@ -326,6 +330,73 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 			]),
 		dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
 		])
+		])
+
+	@app.callback(
+		dash.dependencies.Output('data-store', 'data'),
+		dash.dependencies.Input('url', 'pathname'),
+		dash.dependencies.Input('refresh-button', 'n_clicks'),
+		prevent_initial_call=False
+	)
+	def refresh_data(pathname, n_clicks):
+		"""Refresh the data store when the page is refreshed or URL is updated."""
+		dash_data = AnalysisInteractive().parse_data_structure(
+			path = '/user/out'# simulation output path
+		)
+		return dash_data
+	
+	@app.callback(
+		dash.dependencies.Output('main-content', 'children'),
+		dash.dependencies.Input('data-store', 'data')
+	)
+	def update_main_content(data):
+		"""Update the main content of the page when the data store is updated."""
+		input_div, input_value = data_selection(app, data, DATA_SELECTION_ID, defaults={'Main', 'time'})
+		return [
+			html.Div(children=[
+				html.H2('Plot selection:'),
+				dcc.Dropdown(
+					id=PLOT_SELECTION,
+					options=[{
+						'label': o,  # display name
+						'value': o,  # value passed through callback, must be str
+						} for o in PLOT_OPTIONS],
+					value=next(iter(PLOT_OPTIONS)),
+					),
+				input_div,
+				html.Div(children=[
+					html.Plaintext('x data options: '),
+					dcc.Checklist(
+						id=X_DATA_OPTIONS_ID,
+						options=[{
+							'label': o,  # display name
+							'value': o,  # value passed through callback, must be str
+							} for o in DATA_OPTIONS],
+						value=[],
+						),
+					]),
+				html.Div(children=[
+					html.Plaintext('y data options: '),
+					dcc.Checklist(
+						id=Y_DATA_OPTIONS_ID,
+						options=[{
+							'label': o,  # display name
+							'value': o,  # value passed through callback, must be str
+							} for o in DATA_OPTIONS],
+						value=[],
+						),
+					]),
+				html.Div(children=[
+					html.Button(ADD_X_ID, id=ADD_X_ID),
+					html.Button(ADD_Y_ID, id=ADD_Y_ID),
+					]),
+				html.Div(children=[
+					html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
+					html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
+					]),
+				]),
+			dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
+			]
 
 	# Only update axis values on button click
 	for button in [ADD_X_ID, ADD_Y_ID]:
