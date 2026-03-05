@@ -36,7 +36,7 @@ including their current state and progress through computational steps.
 
     <!-- Progress bar -->
     <div class="progress-wrapper">
-      <progress class="my-progress" value="42" max="100"></progress>
+      <progress class="my-progress" value="{{wf.progress}}" max="100"></progress>
       <span id="progress-text">
         {{ (wf.progress_string) }}
       </span>
