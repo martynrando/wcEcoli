@@ -278,17 +278,18 @@ def status():
     workflow_statuses = []
     for wf_doc in wf_collection.find():
         print(wf_doc.keys(), flush=True, file=sys.stderr)
-        wf_id = wf_doc.get("wf_id")
+        wf_id = wf_doc.get("_id")
         wf_name = wf_doc.get("name", f"Workflow {wf_id}")
         if wf_name == 'unnamed WF':
             wf_name = f"Workflow {wf_id}"
         wf_spec = wf_doc.get("spec", {})
         wf_notes = wf_doc.get("notes", "")
+        fw_ids = wf_doc.get("nodes", [])
         fws = []
         total_count = 0
         completed_count = 0
 
-        fw_docs = fw_collection.find({"wf_id": wf_id}).sort("created_on", 1)
+        fw_docs = fw_collection.find({"fw_id": {"$in": fw_ids}}).sort("created_on", 1)
         for fw_doc in fw_docs:
             if total_count == 0:
                 print(fw_doc.keys(), flush=True, file=sys.stderr)
@@ -296,7 +297,7 @@ def status():
                 completed_count += 1
             total_count += 1
             fws.append({
-                "fw_id": str(fw_doc["_id"]),
+                "fw_id": str(fw_doc["fw_id"]),
                 "name": fw_doc.get("name", f"FW {fw_doc['_id']}"),
                 "state": fw_doc.get("state", {}),
                 "host": fw_doc.get("host", "N/A"),
