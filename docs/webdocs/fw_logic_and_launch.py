@@ -77,7 +77,7 @@ WF_RULES = {
         "type": str,
         "default": "wildtype",
         "allowed": variants,
-        "description": "Specifies the environmental condition. See models/ecoli/sim/variants/*.py.",
+        "description": f"Specifies the environmental condition:\n{', '.join(variants)}",
     },
     "FIRST_VARIANT_INDEX": {
         "type": int,
