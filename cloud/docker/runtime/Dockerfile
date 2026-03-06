@@ -76,9 +76,10 @@ COPY requirements.txt /
 RUN (b1="" \
     && if [ -f ~/.numpy-site.cfg ] ; then b1="--no-binary=numpy,scipy"; fi \
     && echo "Installing pips with '$b1'" \
-    && pip install --no-cache-dir --upgrade pip setuptools wheel \
+    #&& pip install --no-cache-dir --upgrade pip setuptools wheel \
+    && pip install --no-cache-dir pip==24.0 setuptools==69.0.3 wheel==0.42.0 \
     && pip install --no-cache-dir numpy==1.26.3 $b1 \
-    && pip install --no-cache-dir -r requirements.txt $b1 \
+    && pip install --no-cache-dir --no-build-isolation -r requirements.txt $b1 \
     && umask 000 && mkdir -p /.aesara)
 
 CMD ["/bin/bash"]
