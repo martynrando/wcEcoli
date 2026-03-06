@@ -3,4 +3,4 @@ backend: Agg
 
 # Set for editable text in illustrator with a widely available font
 pdf.fonttype: 42
-font.sans-serif: Arial
+font.sans-serif: DejaVu Sans
