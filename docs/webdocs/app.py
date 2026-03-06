@@ -277,6 +277,7 @@ def status():
     # Placeholder: In a real implementation, fetch workflow statuses from the database or workflow manager
     workflow_statuses = []
     for wf_doc in wf_collection.find():
+        print(wf_doc.keys(), flush=True, file=sys.stderr)
         wf_id = wf_doc.get("wf_id")
         wf_name = wf_doc.get("name", f"Workflow {wf_id}")
         if wf_name == 'unnamed WF':
@@ -289,6 +290,8 @@ def status():
 
         fw_docs = fw_collection.find({"wf_id": wf_id}).sort("created_on", 1)
         for fw_doc in fw_docs:
+            if total_count == 0:
+                print(fw_doc.keys(), flush=True, file=sys.stderr)
             if fw_doc.get("state") == "COMPLETED":
                 completed_count += 1
             total_count += 1
