@@ -56,6 +56,16 @@ WORKDIR /wcEcoli
 RUN make clean compile
 ENV PYTHONPATH=/wcEcoli
 
+# trying to fix the matplotlib font cache permission issue that causes warnings
+ENV MPLBACKEND=Agg
+ENV MPLCONFIGDIR=/wcEcoli/matplotlib_config
+RUN mkdir -p /wcEcoli/matplotlib_config && \
+    echo "font.family: sans-serif" >> /wcEcoli/matplotlib_config/matplotlibrc && \
+    echo "font.sans-serif: DejaVu Sans" >> /wcEcoli/matplotlib_config/matplotlibrc
+RUN apt-get update && apt-get install -y fontconfig fonts-dejavu-core fonts-dejavu-extra && \
+    fc-cache -f -v
+RUN rm -rf /root/.cache/matplotlib
+
 # Since this build runs as root, set permissions so running the container as
 # another user will work: Aesara needs to write into the data dir it uses when
 # running as a user with no home dir, and Parca writes into /wcEcoli/cache/.
