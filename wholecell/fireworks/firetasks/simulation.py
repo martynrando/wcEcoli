@@ -89,7 +89,6 @@ class SimulationTask(FiretaskBase):
 		sim = EcoliSimulation(**options)
 
 		sim.run()
-		return f"Ran simulation with processes: {sim._processClasses}"
 	
 	def describe(self):
 		return dict({
