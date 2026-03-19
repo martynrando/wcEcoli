@@ -36,8 +36,8 @@ class AnalysisPaths(object):
 	* For a cohort_plot, out_dir must be a variant output dir.
 	* For a multi_gen_plot, out_dir must be a seed output dir.
 	'''
-	VARIANT_PATTERN = re.compile(r'.+_\d{6}')
-	SEED_PATTERN = re.compile(r'\d{6}')
+	VARIANT_PATTERN = re.compile(r'.+_\d{3,6}')
+	SEED_PATTERN = re.compile(r'\d{3,6}')
 
 	def __init__(self, out_dir, *,
 				 variant_plot: bool = False, multi_gen_plot: bool = False,
@@ -110,21 +110,25 @@ class AnalysisPaths(object):
 		successful = []
 		for filePath in generation_dirs:
 			# Find generation
-			matches = re.findall(r'generation_\d{6}', filePath)
+			matches = re.findall(r'gen(eration)?_\d{3,6}', filePath)
 			if len(matches) > 1:
 				raise Exception("Expected only one match for generation!")
-			generations.append(int(matches[0][-6:]))
-
+			
 			# TODO(jerry): Parse the path instead of using hardwired string offsets.
-			gen_subdir_index = filePath.rfind('generation_')
+			gen_subdir_index = filePath.rfind('gen')
 
 			# Extract the seed index
-			# Assumes: 6-digit seed index SSSSSS in 'SSSSSS/generation_...'
-			seeds.append(int(filePath[gen_subdir_index - 7 : gen_subdir_index - 1]))
-
 			# Extract the variant index
-			# Assumes: 6-digit variant index VVVVVV in 'VARIANT-TYPE_VVVVVV/SSSSSS/generation_...'
-			variants.append(int(filePath[gen_subdir_index - 14 : gen_subdir_index - 8]))
+			# Example structure:
+			# ... / variant_000 / seed_000 / gen_000 / ...
+			parts = filePath.split(os.sep)
+			variant = next(p for p in parts if "var" in p)
+			seed = next(p for p in parts if re.fullmatch(r'[^\d]*\d{3,6}', p))
+			gen = next(p for p in parts if "gen" in p)
+
+			variants.append(int(re.search(r'(\d+)', variant).group(1)))
+			seeds.append(int(seed))
+			generations.append(int(re.search(r'(\d+)', gen).group(1)))
 
 			# This file should exist with successful simulation completion
 			# TODO: save a file with the status of a sim and read that here
