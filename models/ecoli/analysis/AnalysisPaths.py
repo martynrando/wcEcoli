@@ -36,8 +36,8 @@ class AnalysisPaths(object):
 	* For a cohort_plot, out_dir must be a variant output dir.
 	* For a multi_gen_plot, out_dir must be a seed output dir.
 	'''
-	VARIANT_PATTERN = re.compile(r'.+_\d{3,6}')
-	SEED_PATTERN = re.compile(r'\d{3,6}')
+	VARIANT_PATTERN = re.compile(r'var(iant)?_\d{3,6}')
+	SEED_PATTERN = re.compile(r'(sim_)?\d{3,6}')
 
 	def __init__(self, out_dir, *,
 				 variant_plot: bool = False, multi_gen_plot: bool = False,
@@ -123,11 +123,11 @@ class AnalysisPaths(object):
 			# ... / variant_000 / seed_000 / gen_000 / ...
 			parts = filePath.split(os.sep)
 			variant = next(p for p in parts if "var" in p)
-			seed = next(p for p in parts if re.fullmatch(r'[^\d]*\d{3,6}', p))
+			seed = next(p for p in parts if re.fullmatch(r'(sim_)?\d{3,6}', p))
 			gen = next(p for p in parts if "gen" in p)
 
 			variants.append(int(re.search(r'(\d+)', variant).group(1)))
-			seeds.append(int(seed))
+			seeds.append(int(re.search(r'(\d+)', seed).group(1)))
 			generations.append(int(re.search(r'(\d+)', gen).group(1)))
 
 			# This file should exist with successful simulation completion
@@ -138,6 +138,7 @@ class AnalysisPaths(object):
 			variant_kb.append(
 				join(filePath[: gen_subdir_index - 8],
 					 constants.VKB_DIR, constants.SERIALIZED_SIM_DATA_MODIFIED))
+			
 
 		self._path_data["path"] = generation_dirs
 		self._path_data["variant"] = variants
