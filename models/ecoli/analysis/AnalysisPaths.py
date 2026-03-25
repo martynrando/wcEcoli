@@ -36,8 +36,8 @@ class AnalysisPaths(object):
 	* For a cohort_plot, out_dir must be a variant output dir.
 	* For a multi_gen_plot, out_dir must be a seed output dir.
 	'''
-	VARIANT_PATTERN = re.compile(r'.+_\d{3,6}')
-	SEED_PATTERN = re.compile(r'\d{3,6}')
+	VARIANT_PATTERN = re.compile(r'var(iant)?_\d{3,6}')
+	SEED_PATTERN = re.compile(r'(sim_)?\d{3,6}')
 
 	def __init__(self, out_dir, *,
 				 variant_plot: bool = False, multi_gen_plot: bool = False,
