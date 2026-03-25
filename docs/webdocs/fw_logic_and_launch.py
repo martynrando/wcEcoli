@@ -466,7 +466,7 @@ def log_info(
     if message_level > 1:
         print(f"{' ' * indent}[Error {message_level}] {message}",  file=sys.stdout, flush=True)
         pass
-    if True:
+    if False:
         # For when we want to print absolutely every message regardless of verbosity
         print(f"{'>' * indent}{message}",  file=sys.stdout, flush=True)
         pass

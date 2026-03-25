@@ -536,12 +536,9 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		daughter_regex = re.compile('(daughter_)?[0-9]+')
 		experiments_complete = copy.deepcopy(experiments)
 		for base, variants in experiments.items():
-			print('BASE: ' + base,  file=sys.stdout, flush=True)
-			print('VARIANTS: ' + str(variants),  file=sys.stdout, flush=True)
 			for variant, seed_dict in variants.items():
 				variant_dir = os.path.join(base, variant)
 				for seed in os.listdir(variant_dir):
-					print('SEED: ' + seed,  file=sys.stdout, flush=True)
 					if seed_regex.match(seed):
 						gen_dict = seed_dict.get(seed, {})
 						seed_dir = os.path.join(variant_dir, seed)
@@ -570,8 +567,6 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 							seed_dict[seed] = gen_dict
 				if len(seed_dict) == 0:
 					experiments_complete[base].pop(variant)
-					print('Removed variant folder:', file=sys.stdout, flush=True)
-					print(base + ':' + variant, file=sys.stdout, flush=True)
 			if len(experiments_complete[base]) == 0:
 				experiments_complete.pop(base)
 
