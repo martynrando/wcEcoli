@@ -577,8 +577,6 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 		#		' containing one or more simulation output directories.')
 		
 		experiments_complete.update({k: experiments[k] for k in experiments_complete if k in experiments})
-		print('Running analysis on the following simulation directories:',  file=sys.stdout, flush=True)
-		print(experiments_complete,  file=sys.stdout, flush=True)
 		return experiments_complete
 
 	def run(self, args: argparse.Namespace) -> None:
