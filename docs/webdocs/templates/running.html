@@ -22,6 +22,7 @@ including their current state and progress through computational steps.
     <!-- Workflow header -->
     <div class="workflow-header">
       <h2>{{ wf.name }}</h2>
+      <p>Created at: {{ wf.created_at }}</p>
       <span class="workflow-state state-{{ wf.state|lower }}">
         {{ wf.state }}
       </span>

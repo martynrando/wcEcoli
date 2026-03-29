@@ -285,6 +285,7 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		dcc.Location(id='url', refresh=False),  # needed for callbacks to update URL without refreshing page
 		html.H1('Whole-cell simulation explorer'),
 		html.Button('Refresh page', id='refresh-button', n_clicks=0),
+		html.A(html.Button('Home'), href='/'),
 		html.Div(id='main-content'#, children=[
 			# html.Div(children=[
 			# 	html.H2('Plot selection:'),
