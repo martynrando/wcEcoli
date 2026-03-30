@@ -6,6 +6,7 @@ variants, seeds, and generation.
 from __future__ import annotations
 
 import os
+import sys
 from os import listdir
 from os.path import isdir, join
 import re
@@ -49,10 +50,12 @@ class AnalysisPaths(object):
 		if variant_plot:
 			# Find all variant directories in the given simulation output dir
 			all_dirs = listdir(out_dir)
+			print("All directories in out_dir: {}".format(all_dirs), file=sys.stdout, flush=True)
 			variant_out_dirs = []
 			for directory in all_dirs:
 				if self.VARIANT_PATTERN.fullmatch(directory):
 					variant_out_dirs.append(join(out_dir, directory))
+					print("Found variant directory: {}".format(directory), file=sys.stdout, flush=True)
 
 			# Check to see if only wildtype variants exist that didn't match the pattern
 			if len(variant_out_dirs) == 0:
@@ -70,6 +73,7 @@ class AnalysisPaths(object):
 				for directory in all_dirs:
 					if self.SEED_PATTERN.fullmatch(directory):
 						seed_out_dirs.append(join(variant_dir, directory))
+						print("Found seed directories: {}".format(seed_out_dirs), file=sys.stdout, flush=True)
 
 			# Get all generation files for each seed
 			generation_dirs = []
