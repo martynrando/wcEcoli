@@ -850,7 +850,7 @@ class WorkflowBuilder:
         log_info("Building variant analysis task...", verbose_flag=self.user_params["VERBOSE_QUEUE"])
         self.fw_variant_analysis = fw_variant_analysis = self.add_firework(
             AnalysisVariantTask(
-                input_directory=self.KB_DIRECTORY,
+                input_directory=self.INDIV_OUT_DIRECTORY,
                 input_sim_data=os.path.join(
                     self.KB_DIRECTORY,
                     constants.SERIALIZED_SIM_DATA_FILENAME

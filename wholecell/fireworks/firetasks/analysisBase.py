@@ -195,7 +195,7 @@ class AnalysisBase(FiretaskBase):
 			if pool:
 				results[f] = pool.apply_async(run_plot, args=(mod.Plot, args, f, analysis_paths))
 			else:
-				print("{}: Running {}".format(time.ctime(), f))
+				print("{}: Running {} on path {}".format(time.ctime(), f, analysis_paths))
 				# noinspection PyBroadException
 				try:
 					mod.Plot.main(*args, analysis_paths=analysis_paths)
