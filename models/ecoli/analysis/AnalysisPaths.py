@@ -245,11 +245,11 @@ class AnalysisPaths(object):
 		# type: (str) -> List[List[str]]
 		"""Get a sorted list of the directory's generation paths, each as a list
 		of daughter cell paths.
-		ASSUMES: directory contains "generation_000000" thru "generation_GGGGGG".
+		ASSUMES: directory contains "gen(eration)?_000000" thru "gen(eration)?_GGGGGG".
 		"""
 		generation_files = [
 			join(directory, f) for f in listdir(directory)
-			if isdir(join(directory, f)) and "generation" in f]  # type: List[str]
+			if isdir(join(directory, f)) and "gen" in f]  # type: List[str]
 		generations = [[] for _ in generation_files]  # type: List[List[str]]
 		for gen_file in generation_files:
 			generations[int(gen_file[gen_file.rfind('_') + 1:])] = self._get_individuals(gen_file)
