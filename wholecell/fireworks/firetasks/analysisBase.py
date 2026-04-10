@@ -174,6 +174,7 @@ class AnalysisBase(FiretaskBase):
 		seed_paths = self.get('seed_paths')
 		generation_paths = self.get('generation_paths')
 		only_successful = self.get('only_successful', False)
+		print(f'Using analysis path: {input_dir}, variant_paths={variant_paths}, seed_paths={seed_paths}, generation_paths={generation_paths}, only_successful={only_successful}', flush=True, file=sys.stderr)
 		analysis_paths = AnalysisPaths(input_dir, **self.analysis_path_options)
 		analysis_paths.update_cells(variant=variant_paths, seed=seed_paths,
 			generation=generation_paths, only_successful=only_successful)
@@ -195,7 +196,7 @@ class AnalysisBase(FiretaskBase):
 			if pool:
 				results[f] = pool.apply_async(run_plot, args=(mod.Plot, args, f, analysis_paths))
 			else:
-				print("{}: Running {} on {}".format(time.ctime(), f, analysis_paths	))
+				print("{}: Running {}".format(time.ctime(), f))
 				# noinspection PyBroadException
 				try:
 					mod.Plot.main(*args, analysis_paths=analysis_paths)
