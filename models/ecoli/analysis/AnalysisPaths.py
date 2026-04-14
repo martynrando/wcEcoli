@@ -267,7 +267,7 @@ class AnalysisPaths(object):
 			if isdir(join(directory, f))]  # type: List[str]
 		individuals = [''] * len(individual_files)  # type: List[str]
 		for ind_file in individual_files:
-			individuals[int(ind_file[ind_file.rfind('/') + 1:])] = ind_file
+			individuals[int(ind_file[ind_file.rfind('_') + 1:])] = ind_file
 		return individuals
 
 	def _set_match(self, field, value):
