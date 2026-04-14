@@ -342,10 +342,23 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	)
 	def refresh_data(pathname, n_clicks):
 		"""Refresh the data store when the page is refreshed or URL is updated."""
-		dash_data = AnalysisInteractive().parse_data_structure(
-			path = '/user/out'# simulation output path
+		if not pathname:
+			return {}
+		parts = pathname.strip('/').split('/')
+		if len(parts) < 2:
+			default_path = os.path.listdir('/user/out')[0]  # default to first directory in out if no path specified
+			data_path = os.path.join('/user/out', default_path)
+			if not os.path.exists(data_path):
+				return {}
+			return AnalysisInteractive().parse_data_structure(
+				path = data_path
+			)
+		data_path = os.path.join('/user/out', parts[1])  # simulation output path
+		if not os.path.exists(data_path):
+			return {}
+		return AnalysisInteractive().parse_data_structure(
+			path = data_path
 		)
-		return dash_data
 	
 	@app.callback(
 		dash.dependencies.Output('main-content', 'children'),

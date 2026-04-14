@@ -478,9 +478,10 @@ class WorkflowBuilder:
         self.operons = ''
         self.name_suffix = ''
         self.user_params = user_params
+        self.wf_name = f"{user_params['submission_time']}__{user_params['sim_description']}{self.name_suffix}"
         self.user_params["indiv_out_directory"] = filepath.makedirs(
             user_params["out_dir"], 
-            f"{user_params['submission_time']}__{user_params['sim_description']}{self.name_suffix}"
+            self.wf_name
         )
 
         log_info(f"Initialized WorkflowBuilder with user_params:", verbose_flag=self.user_params["VERBOSE_QUEUE"], message_level=-1)
@@ -1280,7 +1281,7 @@ class WorkflowBuilder:
         Convert the internal representation to a FireWorks Workflow object
         using the Firetask and dependency information stored in the builder.
         """
-        return Workflow(self.fireworks, links_dict=self.dependencies)
+        return Workflow(self.fireworks, links_dict=self.dependencies, name = self.wf_name)
 
 
     def describe(self) -> None:
