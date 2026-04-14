@@ -284,53 +284,54 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		dcc.Store(id='data-store'),  # hidden store for parsed data structure
 		dcc.Location(id='url', refresh=False),  # needed for callbacks to update URL without refreshing page
 		html.H1('Whole-cell simulation explorer'),
+		html.H3('Use the drop down menus to select a dataset to plot and the type of plot to display.'),
 		html.Button('Refresh page', id='refresh-button', n_clicks=0),
 		html.A(html.Button('Home'), href='/'),
-		html.Div(id='main-content'#, children=[
-			# html.Div(children=[
-			# 	html.H2('Plot selection:'),
-			# 	dcc.Dropdown(
-			# 		id=PLOT_SELECTION,
-			# 		options=[{
-			# 			'label': o,  # display name
-			# 			'value': o,  # value passed through callback, must be str
-			# 			} for o in PLOT_OPTIONS],
-			# 		value=next(iter(PLOT_OPTIONS)),
-			# 		),
-			# 	input_div,
-			# 	html.Div(children=[
-			# 		html.Plaintext('x data options: '),
-			# 		dcc.Checklist(
-			# 			id=X_DATA_OPTIONS_ID,
-			# 			options=[{
-			# 				'label': o,  # display name
-			# 				'value': o,  # value passed through callback, must be str
-			# 				} for o in DATA_OPTIONS],
-			# 			value=[],
-			# 			),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Plaintext('y data options: '),
-			# 		dcc.Checklist(
-			# 			id=Y_DATA_OPTIONS_ID,
-			# 			options=[{
-			# 				'label': o,  # display name
-			# 				'value': o,  # value passed through callback, must be str
-			# 				} for o in DATA_OPTIONS],
-			# 			value=[],
-			# 			),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Button(ADD_X_ID, id=ADD_X_ID),
-			# 		html.Button(ADD_Y_ID, id=ADD_Y_ID),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
-			# 		html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
-			# 		]),
-			# 	]),
-			# dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
-			# ]
+		html.Div(id='main-content', children=[
+			html.Div(children=[
+				html.H2('Plot selection:'),
+				dcc.Dropdown(
+					id=PLOT_SELECTION,
+					options=[{
+						'label': o,  # display name
+						'value': o,  # value passed through callback, must be str
+						} for o in PLOT_OPTIONS],
+					value=next(iter(PLOT_OPTIONS)),
+					),
+				input_div,
+				html.Div(children=[
+					html.Plaintext('x data options: '),
+					dcc.Checklist(
+						id=X_DATA_OPTIONS_ID,
+						options=[{
+							'label': o,  # display name
+							'value': o,  # value passed through callback, must be str
+							} for o in DATA_OPTIONS],
+						value=[],
+						),
+					]),
+				html.Div(children=[
+					html.Plaintext('y data options: '),
+					dcc.Checklist(
+						id=Y_DATA_OPTIONS_ID,
+						options=[{
+							'label': o,  # display name
+							'value': o,  # value passed through callback, must be str
+							} for o in DATA_OPTIONS],
+						value=[],
+						),
+					]),
+				html.Div(children=[
+					html.Button(ADD_X_ID, id=ADD_X_ID),
+					html.Button(ADD_Y_ID, id=ADD_Y_ID),
+					]),
+				html.Div(children=[
+					html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
+					html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
+					]),
+				]),
+			dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
+			]
 		)
 		])
 
