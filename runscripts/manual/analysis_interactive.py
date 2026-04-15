@@ -349,8 +349,11 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		parts = pathname.strip('/').split('/')
 		print(f'Loading analysis for URL path: {parts}', file=sys.stderr, flush=True)
 		if len(parts) < 2:
-			default_path = os.path.listdir('/user/out')  # default to first directory in out if no path specified
-			data_path = os.path.join('/user/out', default_path)
+			default_path = os.listdir('/user/out')  # default to first directory in out if no path specified
+			if not default_path:
+				print("No data available.", file=sys.stderr, flush=True)
+				return {}
+			data_path = os.path.join('/user/out', default_path[0])
 			if not os.path.exists(data_path):
 				print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
 				return {}
