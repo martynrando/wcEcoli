@@ -178,8 +178,8 @@ class AnalysisBase(FiretaskBase):
 		analysis_paths = AnalysisPaths(input_dir, **self.analysis_path_options)
 		analysis_paths.update_cells(variant=variant_paths, seed=seed_paths,
 			generation=generation_paths, only_successful=only_successful)
-		print(f'Found {len(analysis_paths.variant)} variant paths, {len(analysis_paths.seed)} seed paths, and {len(analysis_paths.generation)} generation paths.', flush=True, file=sys.stderr)
-		print(f'Example variant path: {analysis_paths.variant[0] if analysis_paths.variant else "None"}, seed path: {analysis_paths.seed[0] if analysis_paths.seed else "None"}, generation path: {analysis_paths.generation[0] if analysis_paths.generation else "None"}', flush=True, file=sys.stderr)
+		print(f'Found {len(variant_paths)} variant paths, {len(seed_paths)} seed paths, and {len(generation_paths)} generation paths.', flush=True, file=sys.stderr)
+		print(f'Example variant path: {variant_paths[0] if variant_paths else "None"}, seed path: {seed_paths[0] if seed_paths else "None"}, generation path: {generation_paths[0] if generation_paths else "None"}', flush=True, file=sys.stderr)
 		exceptionFileList = []
 		for f in fileList:
 			try:
