@@ -5,6 +5,7 @@ Multiple generations of the same variant will be plotted together
 
 import os
 import pickle
+import re
 
 import numpy as np
 from matplotlib import pyplot as plt
@@ -36,7 +37,9 @@ class Plot(variantAnalysisPlot.VariantAnalysisPlot):
 
 		for simDir in all_cells:
 			simOutDir = os.path.join(simDir, "simOut")
-			variant = int(simDir[simDir.rfind('generation_')-14:simDir.rfind('generation_')-8])
+			m = re.search(r'(?:generation_|gen_)(\d+)', simDir)
+			variant = int(m.group(1)) if m else None
+			# variant = int(simDir[simDir.rfind('generation_')-14:simDir.rfind('generation_')-8])
 
 			mass = TableReader(os.path.join(simOutDir, "Mass"))
 
