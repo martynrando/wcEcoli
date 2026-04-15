@@ -5,6 +5,7 @@ Multiple generations of the same variant will be plotted together
 
 import os
 import pickle
+import re
 
 import numpy as np
 from matplotlib import pyplot as plt
