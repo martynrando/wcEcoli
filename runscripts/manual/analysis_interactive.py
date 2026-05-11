@@ -54,6 +54,7 @@ BUTTON_VALUE_TEMPLATE = '{} value'
 SEPARATOR = '<>'
 VALUE_JOIN = f'{{}}{SEPARATOR}{{}}'
 DATA_OPTIONS = ['mean', 'normalized', 'log']
+CURRENT_DATA = {}
 
 
 def get_vals(d: Dict, k: Union[str, List[str]]):
@@ -112,6 +113,8 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	Returns:
 		app: dash app that can run a server for the interactive plot
 	"""
+	global CURRENT_DATA
+	CURRENT_DATA = data_structure
 
 	def data_selection(
 			app: dash.Dash,
@@ -173,7 +176,7 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 			value = None
 
 			if parent_value is not None:
-				vals = get_vals(data_structure, parent_value)
+				vals = get_vals(CURRENT_DATA, parent_value)
 				if vals is not None:
 					for val in sorted(vals):
 						joined = VALUE_JOIN.format(parent_value, val)
@@ -287,7 +290,102 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		html.H3('Use the drop down menus to select a dataset to plot and the type of plot to display.'),
 		html.Button('Refresh page', id='refresh-button', n_clicks=0),
 		html.A(html.Button('Home'), href='/'),
-		html.Div(id='main-content', children=[
+		html.Div(id='main-content'#, children=[
+			# html.Div(children=[
+			# 	html.H2('Plot selection:'),
+			# 	dcc.Dropdown(
+			# 		id=PLOT_SELECTION,
+			# 		options=[{
+			# 			'label': o,  # display name
+			# 			'value': o,  # value passed through callback, must be str
+			# 			} for o in PLOT_OPTIONS],
+			# 		value=next(iter(PLOT_OPTIONS)),
+			# 		),
+			# 	input_div,
+			# 	html.Div(children=[
+			# 		html.Plaintext('x data options: '),
+			# 		dcc.Checklist(
+			# 			id=X_DATA_OPTIONS_ID,
+			# 			options=[{
+			# 				'label': o,  # display name
+			# 				'value': o,  # value passed through callback, must be str
+			# 				} for o in DATA_OPTIONS],
+			# 			value=[],
+			# 			),
+			# 		]),
+			# 	html.Div(children=[
+			# 		html.Plaintext('y data options: '),
+			# 		dcc.Checklist(
+			# 			id=Y_DATA_OPTIONS_ID,
+			# 			options=[{
+			# 				'label': o,  # display name
+			# 				'value': o,  # value passed through callback, must be str
+			# 				} for o in DATA_OPTIONS],
+			# 			value=[],
+			# 			),
+			# 		]),
+			# 	html.Div(children=[
+			# 		html.Button(ADD_X_ID, id=ADD_X_ID),
+			# 		html.Button(ADD_Y_ID, id=ADD_Y_ID),
+			# 		]),
+			# 	html.Div(children=[
+			# 		html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
+			# 		html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
+			# 		]),
+			# 	]),
+			# dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
+			# ]
+		)
+		])
+
+	@app.callback(
+		dash.dependencies.Output('data-store', 'data'),
+		dash.dependencies.Input('url', 'pathname'),
+		dash.dependencies.Input('refresh-button', 'n_clicks'),
+		prevent_initial_call=False
+	)
+	def refresh_data(pathname, n_clicks):
+		"""Refresh the data store when the page is refreshed or URL is updated."""
+		global CURRENT_DATA
+		if not pathname:
+			print("No URL path specified.", file=sys.stderr, flush=True)
+			return {}
+		parts = pathname.strip('/').split('/')
+		print(f'Loading analysis for URL path: {parts}', file=sys.stderr, flush=True)
+		if len(parts) < 2:
+			default_path = os.listdir('/user/out')  # default to first directory in out if no path specified
+			if not default_path:
+				print("No data available.", file=sys.stderr, flush=True)
+				return {}
+			data_path = os.path.join('/user/out', default_path[0])
+			#data_path = os.path.join('/user/out')  # default to out directory if no path specified
+			if not os.path.exists(data_path):
+				print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
+				return {}
+			return AnalysisInteractive().parse_data_structure(
+				path = data_path
+			)
+		data_path = os.path.join('/user/out', parts[1])  # simulation output path
+		if not os.path.exists(data_path):
+			print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
+			return {}
+		return AnalysisInteractive().parse_data_structure(
+			path = data_path
+		)
+	
+	@app.callback(
+		dash.dependencies.Output('main-content', 'children'),
+		dash.dependencies.Input('data-store', 'data')
+	)
+	def update_main_content(data):
+		"""Update the main content of the page when the data store is updated."""
+		if not data:
+			return html.Div(children=[
+				html.H2('No data available.'),
+				html.P('Please check the URL path or refresh the page to load data.'),
+				])
+		input_div, input_value = data_selection(app, data, DATA_SELECTION_ID, defaults={'Main', 'time'})
+		return [
 			html.Div(children=[
 				html.H2('Plot selection:'),
 				dcc.Dropdown(
@@ -332,95 +430,6 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 				]),
 			dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
 			]
-		)
-		])
-
-	@app.callback(
-		dash.dependencies.Output('data-store', 'data'),
-		dash.dependencies.Input('url', 'pathname'),
-		dash.dependencies.Input('refresh-button', 'n_clicks'),
-		prevent_initial_call=False
-	)
-	def refresh_data(pathname, n_clicks):
-		"""Refresh the data store when the page is refreshed or URL is updated."""
-		if not pathname:
-			print("No URL path specified.", file=sys.stderr, flush=True)
-			return {}
-		parts = pathname.strip('/').split('/')
-		print(f'Loading analysis for URL path: {parts}', file=sys.stderr, flush=True)
-		if len(parts) < 2:
-			default_path = os.listdir('/user/out')  # default to first directory in out if no path specified
-			if not default_path:
-				print("No data available.", file=sys.stderr, flush=True)
-				return {}
-			data_path = os.path.join('/user/out', default_path[0])
-			#data_path = os.path.join('/user/out')  # default to out directory if no path specified
-			if not os.path.exists(data_path):
-				print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
-				return {}
-			return AnalysisInteractive().parse_data_structure(
-				path = data_path
-			)
-		data_path = os.path.join('/user/out', parts[1])  # simulation output path
-		if not os.path.exists(data_path):
-			print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
-			return {}
-		return AnalysisInteractive().parse_data_structure(
-			path = data_path
-		)
-	
-	# @app.callback(
-	# 	dash.dependencies.Output('main-content', 'children'),
-	# 	dash.dependencies.Input('data-store', 'data')
-	# )
-	# def update_main_content(data):
-	# 	"""Update the main content of the page when the data store is updated."""
-	# 	input_div, input_value = data_selection(app, data, DATA_SELECTION_ID, defaults={'Main', 'time'})
-	# 	return [
-	# 		html.Div(children=[
-	# 			html.H2('Plot selection:'),
-	# 			dcc.Dropdown(
-	# 				id=PLOT_SELECTION,
-	# 				options=[{
-	# 					'label': o,  # display name
-	# 					'value': o,  # value passed through callback, must be str
-	# 					} for o in PLOT_OPTIONS],
-	# 				value=next(iter(PLOT_OPTIONS)),
-	# 				),
-	# 			input_div,
-	# 			html.Div(children=[
-	# 				html.Plaintext('x data options: '),
-	# 				dcc.Checklist(
-	# 					id=X_DATA_OPTIONS_ID,
-	# 					options=[{
-	# 						'label': o,  # display name
-	# 						'value': o,  # value passed through callback, must be str
-	# 						} for o in DATA_OPTIONS],
-	# 					value=[],
-	# 					),
-	# 				]),
-	# 			html.Div(children=[
-	# 				html.Plaintext('y data options: '),
-	# 				dcc.Checklist(
-	# 					id=Y_DATA_OPTIONS_ID,
-	# 					options=[{
-	# 						'label': o,  # display name
-	# 						'value': o,  # value passed through callback, must be str
-	# 						} for o in DATA_OPTIONS],
-	# 					value=[],
-	# 					),
-	# 				]),
-	# 			html.Div(children=[
-	# 				html.Button(ADD_X_ID, id=ADD_X_ID),
-	# 				html.Button(ADD_Y_ID, id=ADD_Y_ID),
-	# 				]),
-	# 			html.Div(children=[
-	# 				html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
-	# 				html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
-	# 				]),
-	# 			]),
-	# 		dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
-	# 		]
 
 	# Only update axis values on button click
 	for button in [ADD_X_ID, ADD_Y_ID]:

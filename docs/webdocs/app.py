@@ -324,7 +324,7 @@ dash_data = AnalysisInteractive().parse_data_structure(
 )
 dash_app = create_app(
     data_structure=dash_data,
-    app=dash.Dash(__name__, server=app, url_base_pathname='/analysis/')
+    app=dash.Dash(__name__, server=app, url_base_pathname='/analysis/',suppress_callback_exceptions=True)
 )
 if __name__ == "__main__":
     # Run Flask app
