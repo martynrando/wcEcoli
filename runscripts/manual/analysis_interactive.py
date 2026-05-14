@@ -51,6 +51,7 @@ Y_DATA_OPTIONS_ID = 'y-data-options'
 ADD_X_ID = 'Update x'
 ADD_Y_ID = 'Update y'
 BUTTON_VALUE_TEMPLATE = '{} value'
+BUTTON_CLICKER_TEMPLATE = '{} clicker'
 SEPARATOR = '<>'
 VALUE_JOIN = f'{{}}{SEPARATOR}{{}}'
 DATA_OPTIONS = ['mean', 'normalized', 'log']
@@ -394,9 +395,11 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 						),
 					]),
 				html.Div(children=[
-					html.Button('Update x', id=ADD_X_ID),
-					html.Button('Update y', id=ADD_Y_ID),
+					html.Button('Update x', id=BUTTON_CLICKER_TEMPLATE.format(ADD_X_ID)),
+					html.Button('Update y', id=BUTTON_CLICKER_TEMPLATE.format(ADD_Y_ID)),
 					]),
+				dcc.Store(id=ADD_X_ID, data='/user/out/20260415.012658__<>variant_000000<>000000<>generation_000000<>000000<>Main<>time'),
+				dcc.Store(id=ADD_Y_ID, data='/user/out/20260415.012658__<>variant_000000<>000000<>generation_000000<>000000<>EnzymeKinetics<>targetFluxes'),
 				html.Div(children=[
 					html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
 					html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
@@ -481,10 +484,10 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	for button in [ADD_X_ID, ADD_Y_ID]:
 		@app.callback(
 			[
-				dash.dependencies.Output(button, 'children'),
+				dash.dependencies.Output(button, 'data'),
 				dash.dependencies.Output(BUTTON_VALUE_TEMPLATE.format(button), 'children'),
 			],
-			dash.dependencies.Input(button, 'n_clicks'),  # needed for callback trigger
+			dash.dependencies.Input(BUTTON_CLICKER_TEMPLATE.format(button), 'n_clicks'),  # needed for callback trigger
 			[
 				last_dropdown_state,
 				dash.dependencies.State(BUTTON_VALUE_TEMPLATE.format(button), 'children'),
@@ -502,8 +505,8 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		dash.dependencies.Output(GRAPH_ID, 'figure'),
 		[
 			dash.dependencies.Input(PLOT_SELECTION, 'value'),
-			dash.dependencies.Input(ADD_X_ID, 'children'),
-			dash.dependencies.Input(ADD_Y_ID, 'children'),
+			dash.dependencies.Input(ADD_X_ID, 'data'),
+			dash.dependencies.Input(ADD_Y_ID, 'data'),
 			dash.dependencies.Input(X_DATA_OPTIONS_ID, 'value'),
 			dash.dependencies.Input(Y_DATA_OPTIONS_ID, 'value'),
 		])
