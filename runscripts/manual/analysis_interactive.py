@@ -394,8 +394,8 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 						),
 					]),
 				html.Div(children=[
-					html.Button(ADD_X_ID, id=ADD_X_ID),
-					html.Button(ADD_Y_ID, id=ADD_Y_ID),
+					html.Button('Update x', id=ADD_X_ID),
+					html.Button('Update y', id=ADD_Y_ID),
 					]),
 				html.Div(children=[
 					html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
