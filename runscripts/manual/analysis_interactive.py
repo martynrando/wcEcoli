@@ -54,7 +54,7 @@ BUTTON_VALUE_TEMPLATE = '{} value'
 SEPARATOR = '<>'
 VALUE_JOIN = f'{{}}{SEPARATOR}{{}}'
 DATA_OPTIONS = ['mean', 'normalized', 'log']
-CURRENT_DATA = {}
+
 
 
 def get_vals(d: Dict, k: Union[str, List[str]]):
@@ -102,6 +102,63 @@ def load_listener(selection: str) -> Tuple[np.ndarray, List[str]]:
 
 	return data, labels
 
+def get_selection_options(
+		data_structure: Dict,
+		parent_value: str,
+		defaults: Set[str],
+		current: Optional[str] = None
+	) -> Tuple[List[Dict[str,str]], Optional[str]]:
+	"""
+	Get the selection options for drop down menus based on the parent
+	drop down value indexed into the data structure.
+
+	Args:
+		data_structure: nested directory structure of possible
+			simulations (see parse_data_structure())
+		parent_value: value of the parent drop down menu
+		defaults: default values to start with in a drop down if any
+			selection options match a value in this set
+		current: current value of the drop down, if set, keeps this
+			value if it is still a valid selection option
+
+	Returns:
+		options: drop down menu options with a display label and
+			correponding value
+		value: the default value to select for the drop down menu
+	"""
+
+	# Empty return values in case path or vals are not specified
+	options = []
+	value = None
+
+	if parent_value is not None:
+		vals = get_vals(data_structure, parent_value)
+		if vals is not None:
+			for val in sorted(vals):
+				joined = VALUE_JOIN.format(parent_value, val)
+				options.append({
+					'label': val,
+					'value': joined,
+					})
+				if val in defaults or value is None:
+					value = joined
+
+			if current is not None:
+				current = current.split(SEPARATOR)[-1]
+				if current in vals:
+					value = VALUE_JOIN.format(parent_value, current)
+
+	return options, value
+
+def count_depth(data_structure: Dict) -> int:
+	"""Return the maximum nesting depth of the data structure."""
+	def _depth(d):
+		if not isinstance(d, dict) or not d:
+			return 0
+		return 1 + max(_depth(v) for v in d.values())
+	return _depth(data_structure)
+
+
 def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	"""
 	Create the dash app to serve the webpage and content.
@@ -113,176 +170,188 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	Returns:
 		app: dash app that can run a server for the interactive plot
 	"""
-	global CURRENT_DATA
-	CURRENT_DATA = data_structure
+	max_depth = count_depth(data_structure=data_structure)
 
-	def data_selection(
-			app: dash.Dash,
-			data_structure: Dict,
-			id_: str,
-			defaults: Optional[Set[str]] = None,
-			multi: bool = False,
-			) -> Tuple[html.Div, dash.dependencies.State]:
+	def make_dropdown_ids(base_id: str, depth: int) -> List[str]:
+		return [f'{base_id}{i}' for i in range(1,depth+1)]
+	dropdown_ids = make_dropdown_ids(DATA_SELECTION_ID, max_depth)
+
+	def build_static_layout(base_id: str, dropdown_ids: List[str]) -> List:
 		"""
-		Create div to hold drop down menus for data selection.
-
-		Args:
-			app: dash app
-			data_structure: nested directory structure of possible simulations
-				(see parse_data_structure())
-			id_: ID for the drop down object on the webpage
-			defaults: default values to start with in a drop down if any
-				selection options match a value in this set
-			multi: if True, creates drop down menus with the option of making
-				multiple selections
-
-		Returns:
-			div: div containing all drop down menus
-			value: value for the bottom drop down menu for the path to data
-				selected
-
-		TODO:
-			- get multi selection working
-			- handle initialization for x and y separately
+		Placeholder dropdowns for all levels of the selection hierarchy. Options populated by callbacks.
 		"""
+		children = [html.H2(base_id)]
+		for did in dropdown_ids:
+			children.append(dcc.Dropdown(id=did, options=[], value=None))
+		return children
 
-		def get_selection_options(
-				data_structure: Dict,
-				parent_value: str,
-				defaults: Set[str],
-				current: Optional[str] = None,
-				) -> Tuple[List[Dict[str, str]], Optional[str]]:
-			"""
-			Get the selection options for drop down menus based on the parent
-			drop down value indexed into the data structure.
+	# def data_selection(
+	# 		app: dash.Dash,
+	# 		data_structure: Dict,
+	# 		id_: str,
+	# 		defaults: Optional[Set[str]] = None,
+	# 		multi: bool = False,
+	# 		) -> Tuple[html.Div, dash.dependencies.State]:
+	# 	"""
+	# 	Create div to hold drop down menus for data selection.
 
-			Args:
-				data_structure: nested directory structure of possible
-					simulations (see parse_data_structure())
-				parent_value: value of the parent drop down menu
-				defaults: default values to start with in a drop down if any
-					selection options match a value in this set
-				current: current value of the drop down, if set, keeps this
-					value if it is still a valid selection option
+	# 	Args:
+	# 		app: dash app
+	# 		data_structure: nested directory structure of possible simulations
+	# 			(see parse_data_structure())
+	# 		id_: ID for the drop down object on the webpage
+	# 		defaults: default values to start with in a drop down if any
+	# 			selection options match a value in this set
+	# 		multi: if True, creates drop down menus with the option of making
+	# 			multiple selections
 
-			Returns:
-				options: drop down menu options with a display label and
-					correponding value
-				value: the default value to select for the drop down menu
-			"""
+	# 	Returns:
+	# 		div: div containing all drop down menus
+	# 		value: value for the bottom drop down menu for the path to data
+	# 			selected
 
-			# Empty return values in case path or vals are not specified
-			options = []
-			value = None
+	# 	TODO:
+	# 		- get multi selection working
+	# 		- handle initialization for x and y separately
+	# 	"""
 
-			if parent_value is not None:
-				vals = get_vals(CURRENT_DATA, parent_value)
-				if vals is not None:
-					for val in sorted(vals):
-						joined = VALUE_JOIN.format(parent_value, val)
-						options.append({
-							'label': val,
-							'value': joined,
-							})
-						if val in defaults or value is None:
-							value = joined
+	# 	def get_selection_options(
+	# 			data_structure: Dict,
+	# 			parent_value: str,
+	# 			defaults: Set[str],
+	# 			current: Optional[str] = None,
+	# 			) -> Tuple[List[Dict[str, str]], Optional[str]]:
+	# 		"""
+	# 		Get the selection options for drop down menus based on the parent
+	# 		drop down value indexed into the data structure.
 
-					if current is not None:
-						current = current.split(SEPARATOR)[-1]
-						if current in vals:
-							value = VALUE_JOIN.format(parent_value, current)
+	# 		Args:
+	# 			data_structure: nested directory structure of possible
+	# 				simulations (see parse_data_structure())
+	# 			parent_value: value of the parent drop down menu
+	# 			defaults: default values to start with in a drop down if any
+	# 				selection options match a value in this set
+	# 			current: current value of the drop down, if set, keeps this
+	# 				value if it is still a valid selection option
 
-			return options, value
+	# 		Returns:
+	# 			options: drop down menu options with a display label and
+	# 				correponding value
+	# 			value: the default value to select for the drop down menu
+	# 		"""
 
-		def add_children(
-				children: List,
-				base_id: str,
-				parent_id: str,
-				parent_value: str,
-				data_structure: Dict,
-				defaults: Set[str],
-				count: int = 0
-				) -> Tuple[List, int]:
-			"""
-			Recursively add drop down selections dependent on the parent
-			drop down menu.  Registers a callback to update the drop down when
-			the parent is updated.
+	# 		# Empty return values in case path or vals are not specified
+	# 		options = []
+	# 		value = None
 
-			Args:
-				children: children for the HTML div (header and drop down menus)
-				base_id: ID for the top level drop down object on the webpage
-				parent_id: ID for the parent drop down object on the webpage
-				parent_value: value for the parent drop down
-				data_structure: nested directory structure of possible simulations
-					(see parse_data_structure())
-				defaults: default values to start with in a drop down if any
-					selection options match a value in this set
-				count: number of children drop down menus added
+	# 		if parent_value is not None:
+	# 			vals = get_vals(CURRENT_DATA, parent_value)
+	# 			if vals is not None:
+	# 				for val in sorted(vals):
+	# 					joined = VALUE_JOIN.format(parent_value, val)
+	# 					options.append({
+	# 						'label': val,
+	# 						'value': joined,
+	# 						})
+	# 					if val in defaults or value is None:
+	# 						value = joined
 
-			Returns:
-				children: children for the HTML div (header and drop down menus)
-					with new drop down menus added
-				count: number of new drop downs added
-			"""
+	# 				if current is not None:
+	# 					current = current.split(SEPARATOR)[-1]
+	# 					if current in vals:
+	# 						value = VALUE_JOIN.format(parent_value, current)
 
-			options, value = get_selection_options(data_structure, parent_value, defaults)
+	# 		return options, value
 
-			if value is None:
-				# Bottom of the data structure - no more selection is needed
-				return children, count
-			else:
-				# New drop down menu for nested selection
-				count += 1
-				sub_id = f'{base_id}{count}'
-				children.append(dcc.Dropdown(
-					id=sub_id,
-					multi=multi,
-					options=options,
-					value=value,
-					))
+	# 	def add_children(
+	# 			children: List,
+	# 			base_id: str,
+	# 			parent_id: str,
+	# 			parent_value: str,
+	# 			data_structure: Dict,
+	# 			defaults: Set[str],
+	# 			count: int = 0
+	# 			) -> Tuple[List, int]:
+	# 		"""
+	# 		Recursively add drop down selections dependent on the parent
+	# 		drop down menu.  Registers a callback to update the drop down when
+	# 		the parent is updated.
 
-				# Register callback to update list options when parent changes
-				@app.callback(
-					[
-						dash.dependencies.Output(sub_id, 'options'),
-						dash.dependencies.Output(sub_id, 'value'),
-					],
-					[dash.dependencies.Input(parent_id, 'value')],
-					[dash.dependencies.State(sub_id, 'value')],
-					prevent_initial_call=True)
-				def update(parent_value: str, current: str) -> Tuple[List[Dict[str, str]], Optional[str]]:
-					"""Update valid selection based on the parent value"""
-					return get_selection_options(data_structure, parent_value, defaults, current=current)
+	# 		Args:
+	# 			children: children for the HTML div (header and drop down menus)
+	# 			base_id: ID for the top level drop down object on the webpage
+	# 			parent_id: ID for the parent drop down object on the webpage
+	# 			parent_value: value for the parent drop down
+	# 			data_structure: nested directory structure of possible simulations
+	# 				(see parse_data_structure())
+	# 			defaults: default values to start with in a drop down if any
+	# 				selection options match a value in this set
+	# 			count: number of children drop down menus added
 
-				return add_children(children, base_id, sub_id, value, data_structure, defaults, count=count)
+	# 		Returns:
+	# 			children: children for the HTML div (header and drop down menus)
+	# 				with new drop down menus added
+	# 			count: number of new drop downs added
+	# 		"""
 
-		if defaults is None:
-			defaults = set()
+	# 		options, value = get_selection_options(data_structure, parent_value, defaults)
 
-		value = next(iter(data_structure))
+	# 		if value is None:
+	# 			# Bottom of the data structure - no more selection is needed
+	# 			return children, count
+	# 		else:
+	# 			# New drop down menu for nested selection
+	# 			count += 1
+	# 			sub_id = f'{base_id}{count}'
+	# 			children.append(dcc.Dropdown(
+	# 				id=sub_id,
+	# 				multi=multi,
+	# 				options=options,
+	# 				value=value,
+	# 				))
 
-		# Create children for the drop down div
-		children = [
-			html.H2(id_),
-			dcc.Dropdown(
-				id=id_,
-				options=[{
-					'label': os.path.basename(d),
-					'value': d,
-					} for d in data_structure],
-				value=value,
-				)
-			]
-		children, n_added = add_children(children, id_, id_, value, data_structure, defaults)
+	# 			# Register callback to update list options when parent changes
+	# 			@app.callback(
+	# 				[
+	# 					dash.dependencies.Output(sub_id, 'options'),
+	# 					dash.dependencies.Output(sub_id, 'value'),
+	# 				],
+	# 				[dash.dependencies.Input(parent_id, 'value')],
+	# 				[dash.dependencies.State(sub_id, 'value')],
+	# 				prevent_initial_call=True)
+	# 			def update(parent_value: str, current: str) -> Tuple[List[Dict[str, str]], Optional[str]]:
+	# 				"""Update valid selection based on the parent value"""
+	# 				return get_selection_options(data_structure, parent_value, defaults, current=current)
 
-		div = html.Div(children=children)
-		input_value = dash.dependencies.State(f'{id_}{n_added}', 'value')
+	# 			return add_children(children, base_id, sub_id, value, data_structure, defaults, count=count)
 
-		return div, input_value
+	# 	if defaults is None:
+	# 		defaults = set()
+
+	# 	value = next(iter(data_structure))
+
+	# 	# Create children for the drop down div
+	# 	children = [
+	# 		html.H2(id_),
+	# 		dcc.Dropdown(
+	# 			id=id_,
+	# 			options=[{
+	# 				'label': os.path.basename(d),
+	# 				'value': d,
+	# 				} for d in data_structure],
+	# 			value=value,
+	# 			)
+	# 		]
+	# 	children, n_added = add_children(children, id_, id_, value, data_structure, defaults)
+
+	# 	div = html.Div(children=children)
+	# 	input_value = dash.dependencies.State(f'{id_}{n_added}', 'value')
+
+	# 	return div, input_value
 
 	# Create webpage layout
 	# app = dash.Dash()
-	input_div, input_value = data_selection(app, data_structure, DATA_SELECTION_ID, defaults={'Main', 'time'})
+	# input_div, input_value = data_selection(app, data_structure, DATA_SELECTION_ID, defaults={'Main', 'time'})
 	app.layout = html.Div(children=[
 		dcc.Store(id='data-store'),  # hidden store for parsed data structure
 		dcc.Location(id='url', refresh=False),  # needed for callbacks to update URL without refreshing page
@@ -290,102 +359,7 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		html.H3('Use the drop down menus to select a dataset to plot and the type of plot to display.'),
 		html.Button('Refresh page', id='refresh-button', n_clicks=0),
 		html.A(html.Button('Home'), href='/'),
-		html.Div(id='main-content'#, children=[
-			# html.Div(children=[
-			# 	html.H2('Plot selection:'),
-			# 	dcc.Dropdown(
-			# 		id=PLOT_SELECTION,
-			# 		options=[{
-			# 			'label': o,  # display name
-			# 			'value': o,  # value passed through callback, must be str
-			# 			} for o in PLOT_OPTIONS],
-			# 		value=next(iter(PLOT_OPTIONS)),
-			# 		),
-			# 	input_div,
-			# 	html.Div(children=[
-			# 		html.Plaintext('x data options: '),
-			# 		dcc.Checklist(
-			# 			id=X_DATA_OPTIONS_ID,
-			# 			options=[{
-			# 				'label': o,  # display name
-			# 				'value': o,  # value passed through callback, must be str
-			# 				} for o in DATA_OPTIONS],
-			# 			value=[],
-			# 			),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Plaintext('y data options: '),
-			# 		dcc.Checklist(
-			# 			id=Y_DATA_OPTIONS_ID,
-			# 			options=[{
-			# 				'label': o,  # display name
-			# 				'value': o,  # value passed through callback, must be str
-			# 				} for o in DATA_OPTIONS],
-			# 			value=[],
-			# 			),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Button(ADD_X_ID, id=ADD_X_ID),
-			# 		html.Button(ADD_Y_ID, id=ADD_Y_ID),
-			# 		]),
-			# 	html.Div(children=[
-			# 		html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
-			# 		html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
-			# 		]),
-			# 	]),
-			# dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
-			# ]
-		)
-		])
-
-	@app.callback(
-		dash.dependencies.Output('data-store', 'data'),
-		dash.dependencies.Input('url', 'pathname'),
-		dash.dependencies.Input('refresh-button', 'n_clicks'),
-		prevent_initial_call=False
-	)
-	def refresh_data(pathname, n_clicks):
-		"""Refresh the data store when the page is refreshed or URL is updated."""
-		global CURRENT_DATA
-		if not pathname:
-			print("No URL path specified.", file=sys.stderr, flush=True)
-			return {}
-		parts = pathname.strip('/').split('/')
-		print(f'Loading analysis for URL path: {parts}', file=sys.stderr, flush=True)
-		if len(parts) < 2:
-			default_path = os.listdir('/user/out')  # default to first directory in out if no path specified
-			if not default_path:
-				print("No data available.", file=sys.stderr, flush=True)
-				return {}
-			data_path = os.path.join('/user/out', default_path[0])
-			#data_path = os.path.join('/user/out')  # default to out directory if no path specified
-			if not os.path.exists(data_path):
-				print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
-				return {}
-			return AnalysisInteractive().parse_data_structure(
-				path = data_path
-			)
-		data_path = os.path.join('/user/out', parts[1])  # simulation output path
-		if not os.path.exists(data_path):
-			print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
-			return {}
-		return AnalysisInteractive().parse_data_structure(
-			path = data_path
-		)
-	
-	@app.callback(
-		dash.dependencies.Output('main-content', 'children'),
-		dash.dependencies.Input('data-store', 'data')
-	)
-	def update_main_content(data):
-		"""Update the main content of the page when the data store is updated."""
-		if not data:
-			return html.Div(children=[
-				html.H2('No data available.'),
-				html.P('Please check the URL path or refresh the page to load data.'),
-				])
-		input_div, input_value = data_selection(app, data, DATA_SELECTION_ID, defaults={'Main', 'time'})
-		return [
+		html.Div(id='main-content', children=[
 			html.Div(children=[
 				html.H2('Plot selection:'),
 				dcc.Dropdown(
@@ -396,7 +370,7 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 						} for o in PLOT_OPTIONS],
 					value=next(iter(PLOT_OPTIONS)),
 					),
-				input_div,
+				html.Div(children=build_static_layout(DATA_SELECTION_ID, dropdown_ids)),
 				html.Div(children=[
 					html.Plaintext('x data options: '),
 					dcc.Checklist(
@@ -430,20 +404,94 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 				]),
 			dcc.Graph(id=GRAPH_ID, style={'height': '600px'}),
 			]
+		)
+		])
+
+	@app.callback(
+		dash.dependencies.Output('data-store', 'data'),
+		dash.dependencies.Input('url', 'pathname'),
+		dash.dependencies.Input('refresh-button', 'n_clicks'),
+		prevent_initial_call=False
+	)
+	def refresh_data(pathname, n_clicks):
+		"""Refresh the data store when the page is refreshed or URL is updated."""
+		if not pathname:
+			print("No URL path specified.", file=sys.stderr, flush=True)
+			return {}
+		parts = pathname.strip('/').split('/')
+		print(f'Loading analysis for URL path: {parts}', file=sys.stderr, flush=True)
+		if len(parts) < 2:
+			default_path = os.listdir('/user/out')  # default to first directory in out if no path specified
+			if not default_path:
+				print("No data available.", file=sys.stderr, flush=True)
+				return {}
+			data_path = os.path.join('/user/out', default_path[0])
+			if not os.path.exists(data_path):
+				print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
+				return {}
+			return AnalysisInteractive().parse_data_structure(
+				path = data_path
+			)
+		data_path = os.path.join('/user/out', parts[1])  # simulation output path
+		if not os.path.exists(data_path):
+			print(f"Data path does not exist: {data_path}", file=sys.stderr, flush=True)
+			return {}
+		return AnalysisInteractive().parse_data_structure(
+			path = data_path
+		)
+	
+
+	defaults = {'Main', 'time'}
+	@app.callback(
+		[
+			dash.dependencies.Output(dropdown_ids[0], 'options'),
+			dash.dependencies.Output(dropdown_ids[0], 'value')
+		],
+		dash.dependencies.Input('data-store', 'data')
+	)
+	def update_dropdowns(data):
+		"""Update the main content of the page when the data store is updated."""
+		if not data:
+			return [], None
+		options = [{'label': os.path.basename(k), 'value': k} for k in sorted(data)]
+		value = options[0]['value'] if options else None
+		return options, value
+	
+	for i in range(1, len(dropdown_ids)):
+		current_id = dropdown_ids[i]
+		parent_id = dropdown_ids[i-1]
+
+		@app.callback(
+			[
+				dash.dependencies.Output(current_id, 'options'),
+				dash.dependencies.Output(current_id, 'value')
+			],
+			dash.dependencies.Input(parent_id, 'value'),
+			dash.dependencies.State(current_id, 'value'),
+			dash.dependencies.State('data-store', 'data')
+		)
+		def update_dropdown(parent_value, current_value, data, _defaults=defaults):
+			if not data or parent_value is None:
+				return [], None
+			return get_selection_options(data, parent_value, _defaults, current_value)
+		
+	last_dropdown_state = dash.dependencies.State(dropdown_ids[-1], 'value')
 
 	# Only update axis values on button click
 	for button in [ADD_X_ID, ADD_Y_ID]:
 		@app.callback(
 			[
-				dash.dependencies.Output(button, 'value'),
+				dash.dependencies.Output(button, 'children'),
 				dash.dependencies.Output(BUTTON_VALUE_TEMPLATE.format(button), 'children'),
 			],
 			dash.dependencies.Input(button, 'n_clicks'),  # needed for callback trigger
 			[
-				input_value,
+				last_dropdown_state,
 				dash.dependencies.State(BUTTON_VALUE_TEMPLATE.format(button), 'children'),
 			])
 		def update_axis(n_clicks, val, previous):
+			if val is None:
+				return dash.no_update, dash.no_update
 			new_text = ' '.join(previous.split(' ')[:1] + val.split(SEPARATOR))
 			return val, new_text
 
@@ -454,8 +502,8 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 		dash.dependencies.Output(GRAPH_ID, 'figure'),
 		[
 			dash.dependencies.Input(PLOT_SELECTION, 'value'),
-			dash.dependencies.Input(ADD_X_ID, 'value'),
-			dash.dependencies.Input(ADD_Y_ID, 'value'),
+			dash.dependencies.Input(ADD_X_ID, 'children'),
+			dash.dependencies.Input(ADD_Y_ID, 'children'),
 			dash.dependencies.Input(X_DATA_OPTIONS_ID, 'value'),
 			dash.dependencies.Input(Y_DATA_OPTIONS_ID, 'value'),
 		])
