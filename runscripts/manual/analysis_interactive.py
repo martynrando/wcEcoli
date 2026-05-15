@@ -84,6 +84,7 @@ def load_listener(selection: str) -> Tuple[np.ndarray, List[str]]:
 	"""
 
 	split = selection.split(SEPARATOR)
+	print(f'Loading listener {split[-2]} into chart.', file=sys.stderr, flush=True)
 	path = os.path.join(*split[:-2], 'simOut')
 	listener = split[-2]
 	column = split[-1]
