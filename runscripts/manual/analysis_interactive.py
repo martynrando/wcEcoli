@@ -161,7 +161,7 @@ def count_depth(data_structure: Dict) -> int:
 	return _depth(data_structure)
 
 
-def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
+def create_app(data_structure: Dict, sim_dir: str, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	"""
 	Create the dash app to serve the webpage and content.
 
@@ -354,6 +354,9 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 	# Create webpage layout
 	# app = dash.Dash()
 	# input_div, input_value = data_selection(app, data_structure, DATA_SELECTION_ID, defaults={'Main', 'time'})
+	x_default = 'variant_000000<>000000<>generation_000000<>000000<>Main<>time'
+	y_default = 'variant_000000<>000000<>generation_000000<>000000<>EnzymeKinetics<>targetFluxes'
+
 	app.layout = html.Div(children=[
 		dcc.Store(id='data-store'),  # hidden store for parsed data structure
 		dcc.Location(id='url', refresh=False),  # needed for callbacks to update URL without refreshing page
@@ -399,8 +402,8 @@ def create_app(data_structure: Dict, app: dash.Dash = dash.Dash()) -> dash.Dash:
 					html.Button('Update x', id=BUTTON_CLICKER_TEMPLATE.format(ADD_X_ID)),
 					html.Button('Update y', id=BUTTON_CLICKER_TEMPLATE.format(ADD_Y_ID)),
 					]),
-				dcc.Store(id=ADD_X_ID, data='/user/out/20260415.012658__<>variant_000000<>000000<>generation_000000<>000000<>Main<>time'),
-				dcc.Store(id=ADD_Y_ID, data='/user/out/20260415.012658__<>variant_000000<>000000<>generation_000000<>000000<>EnzymeKinetics<>targetFluxes'),
+				dcc.Store(id=ADD_X_ID, data=VALUE_JOIN.format(sim_dir, x_default)),
+				dcc.Store(id=ADD_Y_ID, data=VALUE_JOIN.format(sim_dir, y_default)),
 				html.Div(children=[
 					html.Plaintext('x: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_X_ID)),
 					html.Plaintext('y: ', id=BUTTON_VALUE_TEMPLATE.format(ADD_Y_ID)),
@@ -665,7 +668,7 @@ class AnalysisInteractive(scriptBase.ScriptBase):
 
 	def run(self, args: argparse.Namespace) -> None:
 		data_structure = self.parse_data_structure(args.sim_dir)
-		app = create_app(data_structure)
+		app = create_app(data_structure, sim_dir = args.sim_dir)
 
 		# Serve interactive page (may take a second to load, reload if necessary)
 		#webbrowser.open_new(f'http://127.0.0.1:{PORT}/')
